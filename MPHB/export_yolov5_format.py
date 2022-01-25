@@ -1,10 +1,7 @@
-# Multiple Pose Human Body Database (LSP/MPII-MPHB)
-# http://parnec.nuaa.edu.cn/_upload/tpl/02/db/731/template731/pages/xtan/MPHB.html
-# writen on 2022.01.25
-
 import os
 
 import cv2
+from tqdm import tqdm
 from openpyxl import load_workbook
 
 
@@ -50,27 +47,40 @@ def read_bbox_label(bbox_label_root):
     return bbox_labels
 
 
-def plot_bboxes(bboxes, img):
-    for bbox in bboxes:
-        cv2.rectangle(img, bbox[:2], bbox[2:], [0, 0, 255])
+def xyxy2cpwhn(xyxy, w, h):
+    cpwhn = [(xyxy[0] + xyxy[2]) / 2 / w,
+             (xyxy[1] + xyxy[3]) / 2 / h,
+             (xyxy[2] - xyxy[0]) / w,
+             (xyxy[3] - xyxy[1]) / h]
+    return cpwhn
 
 
-def view_annot(img_dir, bbox_label_root, action_label_root, target_action=None):
+def export_images_and_labels(img_dir, bbox_label_root, action_label_root, output_dir, target_action=None):
+    out_img_dir = os.path.join(output_dir, "images")
+    out_label_dir = os.path.join(output_dir, "labels")
+    if not os.path.isdir(out_img_dir):
+        os.makedirs(out_img_dir)
+    if not os.path.isdir(out_label_dir):
+        os.makedirs(out_label_dir)
     target_imgs = get_target_imgs(img_dir, action_label_root, target_action)
     bbox_labels = read_bbox_label(bbox_label_root)
-    for target_img_name in target_imgs:
+    target_action = target_action if target_action is not None else "All"
+    print(f"\n--- Exporting {target_action} images to YOLOv5 format")
+    for target_img_name in tqdm(target_imgs):
         target_img_path = os.path.join(img_dir, target_img_name)
         if not os.path.isfile(target_img_path):
             continue
         target_img_num = int(target_img_name.split(".")[0])
-        target_bboxes = bbox_labels[target_img_num]
-        print(f"\n--- {target_img_name}")
-        print(target_bboxes)
+        xyxys = bbox_labels[target_img_num]
         target_img = cv2.imread(target_img_path)
-        plot_bboxes(target_bboxes, target_img)
-        img_name = target_action if target_action is not None else "image"
-        #cv2.imshow(img_name, target_img)
-        #cv2.waitKey(0)
+        h, w, _ = target_img.shape
+        target_label = ""
+        for xyxy in xyxys:
+            cpwhn = xyxy2cpwhn(xyxy, w, h)
+            target_label += f"0 {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}\n"
+        cv2.imwrite(os.path.join(out_img_dir, target_img_name), target_img)
+        with open(os.path.join(out_label_dir, target_img_name.split(".")[0] + ".txt"), "w") as f:
+            f.write(target_label)
 
 
 if __name__ == "__main__":
@@ -80,5 +90,5 @@ if __name__ == "__main__":
     action_label_root = os.path.join(root, "label-linux-compress")
 
     target_action = "lying"
-    #target_action = None
-    view_annot(img_dir, bbox_label_root, action_label_root, target_action)
+    output_dir = os.path.join(root, "custom", target_action)
+    export_images_and_labels(img_dir, bbox_label_root, action_label_root, output_dir, target_action)
