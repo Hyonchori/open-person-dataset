@@ -1,4 +1,7 @@
 import os
+import json
+
+import cv2
 
 
 actions = {
@@ -8,7 +11,26 @@ actions = {
 }
 
 
+def view_annot(img_dir, annot):
+    print(img_dir)
+    imgs = os.listdir(img_dir)
+    print(len(imgs))
+    print(annot.keys())
+    bboxes = annot["annotations"]
+    print(len(bboxes))
+    for img_name, bbox in zip(imgs, bboxes):
+        img_path = os.path.join(img_dir, img_name)
+        print(img_path)
+        img_path = r"E:/datasets/사람동작 영상/이미지/image_action_14/image_14-1/14-1/14-1_001-C08/14-1_001-C08_009.jpg"
+        print(img_path)
+        print(os.path.isfile(img_path))
+        img = cv2.imread(img_path)
+        print(img.shape)
 
+        action_cls = int(img_name.split("_")[0].split("-")[0])
+        cv2.imshow(actions[action_cls], img)
+        cv2.waitKey(0)
+        break
 
 
 
@@ -48,7 +70,12 @@ if __name__ == "__main__":
     # target camera
     target_cam_idx = min(6, len(case_dict[target_case]))
     target_cam = case_dict[target_case][target_cam_idx]
-    target_dir = os.path.join(num_dir_path, target_cam)
+    target_img_dir = os.path.join(num_dir_path, target_cam)
 
-    print(len(annot_2d_list))
-    target_annot_dir = os.path.join(annot_root)
+    # target annotation
+    target_annot_dir = os.path.join(annot_root_2d, target_cam.split("_")[0])
+    target_annot_2d_path = os.path.join(target_annot_dir, f"{target_cam}_2D.json")
+    with open(target_annot_2d_path) as f:
+        target_annot = json.load(f)
+
+    view_annot(target_img_dir, target_annot)
