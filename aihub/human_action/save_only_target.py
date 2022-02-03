@@ -2,6 +2,8 @@ import argparse
 import os
 import json
 
+import cv2
+
 
 def main(args):
     root = args.root
@@ -46,7 +48,41 @@ def main(args):
 
 
 def save_only_target(img_dir_path, annot, max_num_per_cam, save_interval, box_ratio, execute):
-    pass
+    imgs = sorted(os.listdir(img_dir_path), reverse=True)
+    bboxes = reversed(annot["annotations"])
+    cnt = 0
+    tmp_num = None
+    save_imgs = []
+    for img_name, bbox in zip(imgs, bboxes):
+        img_num = int(img_name.split(".")[0].split("_")[-1])
+        bbox = bbox["bbox"]
+        if None in bbox:
+            continue
+        width, height = get_width_height(bbox)
+        if width == 0 or height == 0:
+            continue
+        ratio = height / width
+        if cnt <= max_num_per_cam and \
+            ratio <= box_ratio and \
+            (tmp_num is None or tmp_num - img_num >= save_interval):
+            save_imgs.append(img_name)
+            tmp_num = img_num
+            cnt += 1
+            if cnt == max_num_per_cam:
+                break
+    remove_imgs = list(set(imgs) - set(save_imgs))
+    if execute:
+        print(f"\n--- Processing {img_dir_path}")
+        for img_name in remove_imgs:
+            img_path = os.path.join(img_dir_path, img_name)
+            os.remove(img_path)
+        print(f"\tdelete {len(remove_imgs)} images")
+
+
+def get_width_height(bbox):
+    width = bbox[2] - bbox[0]
+    height = bbox[3] - bbox[1]
+    return width, height
 
 
 def parse_args():
@@ -55,10 +91,10 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    parser.add_argument("--max-num-per-cam", type=int, default=2)
-    parser.add_argument("--save-interval", type=int, default=10)
-    parser.add_argument("--box-ratio", type=float, default=0.5)  # height / width
-    parser.add_argument("--execute", type=bool, default=False)
+    parser.add_argument("--max-num-per-cam", type=int, default=3)
+    parser.add_argument("--save-interval", type=int, default=50)
+    parser.add_argument("--box-ratio", type=float, default=0.8)  # height / width
+    parser.add_argument("--execute", type=bool, default=True)
 
     args = parser.parse_args()
     return args
