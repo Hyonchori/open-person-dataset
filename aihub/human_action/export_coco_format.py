@@ -2,22 +2,21 @@ import argparse
 import os
 import json
 
-import cv2
-
 
 def main(args):
     root = args.root
-    max_num_per_cam = args.max_num_per_cam
-    save_interval = args.save_interval
-    box_ratio = args.box_ratio
-    execute = args.execute
+    out_dir = args.out_dir
+    out_name = args.out_name
 
     annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
     image_root = os.path.join(root, "이미지")
+    out_path = os.path.join(out_dir, out_name) if out_dir is not None else os.path.join(root, out_name)
+    out = {"images": [], "annotations": [], "categories": [{"id": 1, "name": "person"}]}
+    img_cnt = 0
+    ann_cnt = 0
 
     action_dict = {int(x.split("_")[-1]): x for x in os.listdir(image_root)
                    if os.path.isdir(os.path.join(image_root, x))}
-    cnt = 0
     for action_key in action_dict:
         action_dir_path = os.path.join(image_root, action_dict[action_key])
         num_dict = {int(x.split("-")[-1]): x for x in os.listdir(action_dir_path)
@@ -43,47 +42,41 @@ def main(args):
                     target_annot_path = os.path.join(target_annot_dir, f"{cam_dict[cam_key]}_2D.json")
                     with open(target_annot_path) as f:
                         target_annot = json.load(f)
-                    save_only_target(cam_dir_path, target_annot, max_num_per_cam, save_interval, box_ratio, execute)
-                    cnt += 1
+                    img_cnt, ann_cnt = get_tmp_info(cam_dir_path, target_annot, img_cnt, ann_cnt, out)
+    print(f"Summary: {len(out['images'])} images, {len(out['annotations'])} samples")
+    print(f"save_path: {out_path}")
+    json.dump(out, open(out_path, "w"))
 
 
-def save_only_target(img_dir_path, annot, max_num_per_cam, save_interval, box_ratio, execute):
-    imgs = sorted(os.listdir(img_dir_path), reverse=True)
-    bboxes = reversed(annot["annotations"])
-    cnt = 0
-    tmp_num = None
-    save_imgs = []
-    for img_name, bbox in zip(imgs, bboxes):
-        img_num = int(img_name.split(".")[0].split("_")[-1])
-        bbox = bbox["bbox"]
-        if None in bbox:
-            continue
-        width, height = get_width_height(bbox)
-        if width == 0 or height == 0:
-            continue
-        ratio = height / width
-        if cnt <= max_num_per_cam and \
-            ratio <= box_ratio and \
-            (tmp_num is None or tmp_num - img_num >= save_interval):
-            save_imgs.append(img_name)
-            tmp_num = img_num
-            cnt += 1
-            if cnt == max_num_per_cam:
-                break
-    remove_imgs = list(set(imgs) - set(save_imgs))
-    if execute:
-        print(f"\n--- Processing {img_dir_path}")
-        for img_name in remove_imgs:
-            img_path = os.path.join(img_dir_path, img_name)
-            os.remove(img_path)
-        print(f"\tdelete {len(remove_imgs)} images")
+def get_tmp_info(img_dir_path, annot, img_cnt, ann_cnt, coco):
+    imgs = sorted(os.listdir(img_dir_path))
+    target_img_infos = [(i, x) for i, x in enumerate(annot["images"]) if x["img_path"].split("/")[-1] in imgs]
+    for img_name, (target_idx, img_info) in zip(imgs, target_img_infos):
+        img_cnt += 1
+        coco_img_info = {"file_name": img_name,
+                         "id": img_cnt,
+                         "height": img_info["height"],
+                         "width": img_info["width"]}
+        coco["images"].append(coco_img_info)
+        xyxy = annot["annotations"][target_idx]["bbox"]
+        xywh = xyxy2xywh(xyxy)
+        ann_cnt += 1
+        coco_ann_info = {"id": ann_cnt,
+                         "category_id": 1,
+                         "image_id": img_cnt,
+                         "bbox": xywh,
+                         "area": xywh[2] * xywh[3],
+                         "iscrowd": 0}
+        coco["annotations"].append(coco_ann_info)
+    return img_cnt, ann_cnt
 
 
-def get_width_height(bbox):
-    width = bbox[2] - bbox[0]
-    height = bbox[3] - bbox[1]
-    return width, height
-
+def xyxy2xywh(xyxy):
+    xywh = [xyxy[0],
+            xyxy[1],
+            xyxy[2] - xyxy[0],
+            xyxy[3] - xyxy[1]]
+    return xywh
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -91,10 +84,9 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    parser.add_argument("--max-num-per-cam", type=int, default=3)
-    parser.add_argument("--save-interval", type=int, default=50)
-    parser.add_argument("--box-ratio", type=float, default=0.8)  # height / width
-    parser.add_argument("--execute", type=bool, default=False)
+    out_dir = None
+    parser.add_argument("--out-dir", type=str, default=out_dir)
+    parser.add_argument("--out-name", type=str, default="human_action_coco.json")
 
     args = parser.parse_args()
     return args

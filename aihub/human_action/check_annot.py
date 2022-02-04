@@ -58,11 +58,11 @@ def visualize_one_vid(img_dir_path, annot, txt_org=(30, 50), font_size=3, font_t
     label = img_dir_path.split("/")[-1]
     print(f"\n--- Showing {label}")
     imgs = sorted(os.listdir(img_dir_path))
-    bboxes = annot["annotations"]
-    for img_name, bbox in zip(imgs, bboxes):
+    target_indices = [i for i, x in enumerate(annot["images"]) if x["img_path"].split("/")[-1] in imgs]
+    for img_name, target_idx in zip(imgs, target_indices):
         img_path = os.path.join(img_dir_path, img_name)
         img = cv2.imread(img_path)
-        bbox = bbox["bbox"]
+        bbox = annot["annotations"][target_idx]["bbox"]
         img = cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), [0, 0, 255], 2)
         txt_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)
         cv2.rectangle(img, (txt_org[0], txt_org[1] + 5),
