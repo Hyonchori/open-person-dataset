@@ -84,9 +84,9 @@ def bbox2xyxy(bbox):
 if __name__ == "__main__":
     root = "/media/daton/Data/datasets/지하철 역사 내 CCTV 이상행동 영상"
 
-    target_split = 1
-    target_action = 3
-    target_case = 2
+    target_split = 2
+    target_action = 1
+    target_case = 10
     target_scene = None
     # actions = {1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도"}
     view_annot(root,

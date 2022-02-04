@@ -49,13 +49,13 @@ def main(args):
 
 def save_only_target(img_dir_path, annot, max_num_per_cam, save_interval, box_ratio, execute):
     imgs = sorted(os.listdir(img_dir_path), reverse=True)
-    bboxes = reversed(annot["annotations"])
     cnt = 0
     tmp_num = None
     save_imgs = []
-    for img_name, bbox in zip(imgs, bboxes):
+    target_indices = [i for i, x in enumerate(annot["images"]) if x["img_path"].split("/")[-1] in imgs]
+    for img_name, target_idx in zip(imgs, target_indices):
         img_num = int(img_name.split(".")[0].split("_")[-1])
-        bbox = bbox["bbox"]
+        bbox = annot["annotations"][target_idx]["bbox"]
         if None in bbox:
             continue
         width, height = get_width_height(bbox)
