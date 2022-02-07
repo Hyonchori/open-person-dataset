@@ -4,8 +4,10 @@ import json
 import cv2
 
 
-def view_2d_annot(image_root, annot_2d_root,
-                  target_action=None, target_num=None, target_case=None, target_cam=None):
+def view_2d_annot(root, target_action=None, target_num=None, target_case=None, target_cam=None):
+    annot_root = os.path.join(root, "annotation")
+    annot_2d_root = os.path.join(annot_root, "Annotation_2D_tar", "2D")
+    image_root = os.path.join(root, "이미지")
     action_dict = {int(x.split("_")[-1]): x for x in os.listdir(image_root)
                    if os.path.isdir(os.path.join(image_root, x))}
     if target_action is not None:
@@ -44,7 +46,6 @@ def view_2d_annot(image_root, annot_2d_root,
                         continue
                     else:
                         cam_dict = {target_cam: cam_dict[target_cam]}
-
                 for cam in cam_dict:
                     cam_dir_path = os.path.join(num_dir_path, cam_dict[cam])
                     target_annot_dir = os.path.join(annot_2d_root, cam_dict[cam].split("_")[0])
@@ -75,16 +76,13 @@ def visualize_one_vid(img_dir_path, annot, txt_org=(30, 50), font_size=3, font_t
 
 if __name__ == "__main__":
     root = "/media/daton/Data/datasets/사람동작 영상"  # in Ubuntu
-    annot_root = os.path.join(root, "annotation")
-    annot_2d_root = os.path.join(annot_root, "Annotation_2D_tar", "2D")
-    image_root = os.path.join(root, "이미지")
 
     target_action = 6
     target_num = 3
     target_case = None
     target_cam = 1
     # actions = {3: "앉기", 6: "쓰러짐", 14: "윗몸 일으키기",}
-    view_2d_annot(image_root, annot_2d_root,
+    view_2d_annot(root,
                   target_action=target_action,
                   target_num=target_num,
                   target_case=target_case,
