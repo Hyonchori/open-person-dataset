@@ -13,11 +13,12 @@ def main(args):
     prefix = args.prefix
     execute = args.execute
     resize = args.resize
+    max_num_per_case = args.max_num_per_case
     img_out_dir = os.path.join(out_dir, "images")
-    if not os.path.isdir(img_out_dir):
+    if not os.path.isdir(img_out_dir) and execute:
         os.makedirs(img_out_dir)
     label_out_dir = os.path.join(out_dir, "labels")
-    if not os.path.isdir(label_out_dir):
+    if not os.path.isdir(label_out_dir) and execute:
         os.makedirs(label_out_dir)
 
     annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
@@ -49,10 +50,16 @@ def main(args):
             time.sleep(0.5)
             for case_key in tqdm(case_dict):
                 cam_dict = {int(x.split("-")[-1][1:]): x for x in case_dict[case_key]}
+                cam_cnt = 0
                 for cam_key in cam_dict:
                     cam_dir_path = os.path.join(num_dir_path, cam_dict[cam_key])
                     if len(os.listdir(cam_dir_path)) == 0:
                         continue
+                    else:
+                        if cam_cnt >= max_num_per_case:
+                            break
+                        else:
+                            cam_cnt += 1
                     target_annot_dir = os.path.join(annot_2d_root, cam_dict[cam_key].split("_")[0])
                     target_annot_path = os.path.join(target_annot_dir, f"{cam_dict[cam_key]}_2D.json")
                     with open(target_annot_path) as f:
@@ -60,7 +67,7 @@ def main(args):
                     cnt += extract_imglabels_to_out_dir(cam_dir_path, target_annot, img_out_dir, label_out_dir, prefix,
                                                         resize, execute)
     te = time.time()
-    print(f"\nTotal images: {cnt}")  # 10593
+    print(f"\nTotal images: {cnt}")  # 10593 -> 3625 -> 2410
     print(f"Elapsed time: {te - ts:.2f}s")
 
 
@@ -104,13 +111,14 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    out_dir = "/media/daton/Data/datasets/aihub/lying_persons"
+    out_dir = "/media/daton/Data/datasets/aihub/human_behavior_images"
     parser.add_argument("--out-dir", type=str, default=out_dir)
 
     prefix = "human_action"
     parser.add_argument("--prefix", type=str, default=prefix)
-    parser.add_argument("--execute", type=bool, default=False)
+    parser.add_argument("--execute", type=bool, default=True)
     parser.add_argument("--resize", type=int, default=[1280, 720])
+    parser.add_argument("--max-num-per-case", type=int, default=3)
 
     args = parser.parse_args()
     return args

@@ -2,8 +2,6 @@ import argparse
 import os
 import json
 
-import cv2
-
 
 def main(args):
     root = args.root
@@ -11,13 +9,14 @@ def main(args):
     save_interval = args.save_interval
     box_ratio = args.box_ratio
     execute = args.execute
+    target_action = args.target_action
 
     annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
     image_root = os.path.join(root, "이미지")
     cnt = 0
 
     action_dict = {int(x.split("_")[-1]): x for x in os.listdir(image_root)
-                   if os.path.isdir(os.path.join(image_root, x))}
+                   if os.path.isdir(os.path.join(image_root, x)) and int(x.split("_")[-1]) in target_action}
     for action_key in action_dict:
         action_dir_path = os.path.join(image_root, action_dict[action_key])
         num_dict = {int(x.split("-")[-1]): x for x in os.listdir(action_dir_path)
@@ -45,6 +44,7 @@ def main(args):
                         target_annot = json.load(f)
                     save_only_target(cam_dir_path, target_annot, max_num_per_cam, save_interval, box_ratio, execute)
                     cnt += 1
+    print(f"Total removed images: {cnt}")
 
 
 def save_only_target(img_dir_path, annot, max_num_per_cam, save_interval, box_ratio, execute):
@@ -91,10 +91,11 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    parser.add_argument("--max-num-per-cam", type=int, default=3)
+    parser.add_argument("--max-num-per-cam", type=int, default=1)
     parser.add_argument("--save-interval", type=int, default=50)
     parser.add_argument("--box-ratio", type=float, default=0.8)  # height / width
-    parser.add_argument("--execute", type=bool, default=False)
+    parser.add_argument("--execute", type=bool, default=True)
+    parser.add_argument("--target-action", type=int, default=[3, 14])
 
     args = parser.parse_args()
     return args
