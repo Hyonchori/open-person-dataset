@@ -38,10 +38,10 @@ def main(args):
 
 def save_only_target(img_dir_path, annots, max_num_per_case, save_interval, box_ratio, execute):
     imgs = sorted(os.listdir(img_dir_path), reverse=True)
+    target_indices = [i for i, x in enumerate(annots["frames"]) if x["image"] in imgs]
     cnt = 0
     tmp_num = None
     save_imgs = []
-    target_indices = [i for i, x in enumerate(annots["frames"]) if x["image"] in imgs]
     for img_name, target_idx in zip(imgs, target_indices):
         img_num = int(img_name.split(".")[0].split("_")[-1])
         tmp_annots = annots["frames"][target_idx]["annotations"]

@@ -13,17 +13,17 @@ def main(args):
     prefix = args.prefix
     execute = args.execute
     resize = args.resize
-
-    annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
-    image_root = os.path.join(root, "이미지")
     img_out_dir = os.path.join(out_dir, "images")
     if not os.path.isdir(img_out_dir):
         os.makedirs(img_out_dir)
     label_out_dir = os.path.join(out_dir, "labels")
     if not os.path.isdir(label_out_dir):
         os.makedirs(label_out_dir)
-    cnt = 0
 
+    annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
+    image_root = os.path.join(root, "이미지")
+
+    cnt = 0
     ts = time.time()
     action_dict = {int(x.split("_")[-1]): x for x in os.listdir(image_root)
                    if os.path.isdir(os.path.join(image_root, x))}
@@ -57,16 +57,17 @@ def main(args):
                     target_annot_path = os.path.join(target_annot_dir, f"{cam_dict[cam_key]}_2D.json")
                     with open(target_annot_path) as f:
                         target_annot = json.load(f)
-                    cnt += extract_imglabels_to_out_dir(cam_dir_path, target_annot, img_out_dir, label_out_dir, prefix, resize, execute)
+                    cnt += extract_imglabels_to_out_dir(cam_dir_path, target_annot, img_out_dir, label_out_dir, prefix,
+                                                        resize, execute)
     te = time.time()
-    print(f"Total images: {cnt}")
+    print(f"\nTotal images: {cnt}")  # 10593
     print(f"Elapsed time: {te - ts:.2f}s")
 
 
 def extract_imglabels_to_out_dir(img_dir_path, annot, img_out_dir, label_out_dir, prefix, resize, execute):
     imgs = sorted(os.listdir(img_dir_path))
-    cnt = 0
     target_indices = [i for i, x in enumerate(annot["images"]) if x["img_path"].split("/")[-1] in imgs]
+    cnt = 0
     for img_name, target_idx in zip(imgs, target_indices):
         img_path = os.path.join(img_dir_path, img_name)
         img = cv2.imread(img_path)
@@ -108,7 +109,7 @@ def parse_args():
 
     prefix = "human_action"
     parser.add_argument("--prefix", type=str, default=prefix)
-    parser.add_argument("--execute", type=bool, default=True)
+    parser.add_argument("--execute", type=bool, default=False)
     parser.add_argument("--resize", type=int, default=[1280, 720])
 
     args = parser.parse_args()
