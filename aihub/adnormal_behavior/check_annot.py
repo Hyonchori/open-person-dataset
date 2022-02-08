@@ -38,13 +38,13 @@ def view_annot(root, target_action=None, target_split=None, target_case=None, ta
                 case_dict = {target_case: case_dict[target_case]}
             for case in case_dict:
                 case_dir_path = os.path.join(action_dir_path, case_dict[case])
-                takes = [x for x in os.listdir(case_dir_path) if os.path.isdir(os.path.join(case_dir_path, x))]
+                takes = [x for x in sorted(os.listdir(case_dir_path)) if os.path.isdir(os.path.join(case_dir_path, x))]
                 if target_take is not None:
                     assert 1 <= target_take <= len(takes), f"Given target take should be between {0} and {len(takes)}"
                     takes = [sorted(takes)[target_take - 1]]
                 for take in takes:
                     take_dir_path = os.path.join(case_dir_path, take)
-                    scenes = [x for x in os.listdir(take_dir_path) if x.endswith(".mp4")]
+                    scenes = [x for x in sorted(os.listdir(take_dir_path)) if x.endswith(".mp4")]
                     annots = [x.replace(".mp4", ".xml") for x in scenes]
                     for scene, annot in zip(scenes, annots):
                         view_one_vid(take_dir_path, scene, annot)
@@ -59,9 +59,11 @@ def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size
         annot = xmltodict.parse(f.read())["annotation"]
         header = annot["header"]
         fps = float(header["fps"])
-        total_frames = float(header["frames"])
-        total_time = time2hms(header["duration"])
-        total_time_delta = datetime.timedelta(hours=total_time[0], minutes=total_time[1], seconds=total_time[2])
+        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        total_seconds = total_frames / fps
+        seconds = total_seconds % 60
+        minutes = total_seconds // 60
+        total_time_delta = datetime.timedelta(hours=0, minutes=minutes, seconds=seconds)
 
         event = annot["event"]
         start_time = time2hms(event["starttime"])
@@ -78,6 +80,8 @@ def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size
     while True:
         pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
         ret, img = cap.read()
+        if not ret:
+            break
         img = cv2.resize(img, dsize=(WIDTH, HEIGHT))
         txt_size, _ = cv2.getTextSize(vid_name, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)
         cv2.rectangle(img, (txt_org[0], txt_org[1] + 10),
@@ -92,25 +96,27 @@ def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size
         img = cv2.addWeighted(img, 1, ref_img, 0.5, 0)
         cv2.imshow('img', img)
         cv2.waitKey(1)
-        if not ret:
-            break
         if pos_frame >= end_frame:
             break
 
 
 def time2hms(t):
-    h, m, s = [float(x) for x in t.split(":")]
-    return h, m, s
+    if len(t.split(":")) == 3:
+        h, m, s = [float(x) for x in t.split(":")]
+        return h, m, s
+    else:
+        m, s = [float(x) for x in t.split(":")]
+        return 0, m, s
 
 
 if __name__ == "__main__":
     root = "/media/daton/Data/datasets/이상행동 CCTV 영상"
 
     target_action = 5
-    target_split = None
-    target_case = None
-    target_take = 1
-    target_scene = 1
+    target_split = 3
+    target_case = 8
+    target_take = 2
+    target_scene = None
     # actions = {5: "05.실신(swoon)"}
     # splits = {1: "inside_croki", 2: "insidedoor", 3: "outsidedoor"}
     view_annot(root,

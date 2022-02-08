@@ -4,6 +4,10 @@ import json
 import cv2
 
 
+WIDTH = 1280
+HEIGHT = 720
+
+
 def view_2d_annot(root, target_action=None, target_num=None, target_case=None, target_cam=None):
     annot_root = os.path.join(root, "annotation")
     annot_2d_root = os.path.join(annot_root, "Annotation_2D_tar", "2D")
@@ -70,6 +74,7 @@ def visualize_one_vid(img_dir_path, annot, txt_org=(30, 50), font_size=3, font_t
                       (txt_org[0] + txt_size[0], txt_org[1] - txt_size[1] - 5), [0, 0, 0], -1)
         cv2.putText(img, label, txt_org, cv2.FONT_HERSHEY_PLAIN, font_size, [255, 255, 255], font_thickness,
                     cv2.LINE_AA)
+        img = cv2.resize(img, dsize=(1280, 720))
         cv2.imshow("img", img)
         cv2.waitKey(1)
 

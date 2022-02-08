@@ -1,21 +1,30 @@
 import argparse
 import os
 import json
+import time
 
 import cv2
+from tqdm import tqdm
 
 
 def main(args):
     root = args.root
-    max_num_per_cam = args.max_num_per_cam
-    save_interval = args.save_interval
-    box_ratio = args.box_ratio
+    out_dir = args.out_dir
+    prefix = args.prefix
     execute = args.execute
+    resize = args.resize
 
     annot_2d_root = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
     image_root = os.path.join(root, "이미지")
+    img_out_dir = os.path.join(out_dir, "images")
+    if not os.path.isdir(img_out_dir):
+        os.makedirs(img_out_dir)
+    label_out_dir = os.path.join(out_dir, "labels")
+    if not os.path.isdir(label_out_dir):
+        os.makedirs(label_out_dir)
     cnt = 0
 
+    ts = time.time()
     action_dict = {int(x.split("_")[-1]): x for x in os.listdir(image_root)
                    if os.path.isdir(os.path.join(image_root, x))}
     for action_key in action_dict:
@@ -35,54 +44,57 @@ def main(args):
                     case_dict[case_idx].append(case)
                 else:
                     case_dict[case_idx] = [case]
-            for case_key in case_dict:
+            time.sleep(0.5)
+            print(f"\n---Processing {num_dir_path}")
+            time.sleep(0.5)
+            for case_key in tqdm(case_dict):
                 cam_dict = {int(x.split("-")[-1][1:]): x for x in case_dict[case_key]}
                 for cam_key in cam_dict:
                     cam_dir_path = os.path.join(num_dir_path, cam_dict[cam_key])
+                    if len(os.listdir(cam_dir_path)) == 0:
+                        continue
                     target_annot_dir = os.path.join(annot_2d_root, cam_dict[cam_key].split("_")[0])
                     target_annot_path = os.path.join(target_annot_dir, f"{cam_dict[cam_key]}_2D.json")
                     with open(target_annot_path) as f:
                         target_annot = json.load(f)
-                    save_only_target(cam_dir_path, target_annot, max_num_per_cam, save_interval, box_ratio, execute)
-                    cnt += 1
+                    cnt += extract_imglabels_to_out_dir(cam_dir_path, target_annot, img_out_dir, label_out_dir, prefix, resize, execute)
+    te = time.time()
+    print(f"Total images: {cnt}")
+    print(f"Elapsed time: {te - ts:.2f}s")
 
 
-def save_only_target(img_dir_path, annot, max_num_per_cam, save_interval, box_ratio, execute):
-    imgs = sorted(os.listdir(img_dir_path), reverse=True)
+def extract_imglabels_to_out_dir(img_dir_path, annot, img_out_dir, label_out_dir, prefix, resize, execute):
+    imgs = sorted(os.listdir(img_dir_path))
     cnt = 0
-    tmp_num = None
-    save_imgs = []
     target_indices = [i for i, x in enumerate(annot["images"]) if x["img_path"].split("/")[-1] in imgs]
     for img_name, target_idx in zip(imgs, target_indices):
-        img_num = int(img_name.split(".")[0].split("_")[-1])
+        img_path = os.path.join(img_dir_path, img_name)
+        img = cv2.imread(img_path)
+        h, w, _ = img.shape
         bbox = annot["annotations"][target_idx]["bbox"]
+        cpwhn = xyxy2cpwhn(bbox, w, h)
         if None in bbox:
             continue
-        width, height = get_width_height(bbox)
-        if width == 0 or height == 0:
-            continue
-        ratio = height / width
-        if cnt <= max_num_per_cam and \
-            ratio <= box_ratio and \
-            (tmp_num is None or tmp_num - img_num >= save_interval):
-            save_imgs.append(img_name)
-            tmp_num = img_num
-            cnt += 1
-            if cnt == max_num_per_cam:
-                break
-    remove_imgs = list(set(imgs) - set(save_imgs))
-    if execute:
-        print(f"\n--- Processing {img_dir_path}")
-        for img_name in remove_imgs:
-            img_path = os.path.join(img_dir_path, img_name)
-            os.remove(img_path)
-        print(f"\tdelete {len(remove_imgs)} images")
+        label = f"0 {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}"
+
+        if execute:
+            label_path = os.path.join(label_out_dir, img_name.replace(".jpg", ".txt"))
+            with open(label_path, "w") as f:
+                f.write(label)
+            out_img_path = os.path.join(img_out_dir, f"{prefix}_{img_name}")
+            img = cv2.resize(img, dsize=(resize[0], resize[1]))
+            cv2.imwrite(out_img_path, img)
+        cnt += 1
+        cv2.circle(img, (int((bbox[0] + bbox[2]) / 2), int((bbox[1] + bbox[3]) / 2)), 4, [0, 0, 255], -1)
+    return cnt
 
 
-def get_width_height(bbox):
-    width = bbox[2] - bbox[0]
-    height = bbox[3] - bbox[1]
-    return width, height
+def xyxy2cpwhn(xyxy, w, h):
+    cpwhn = [round((xyxy[0] + xyxy[2]) / 2 / w, 6),
+             round((xyxy[1] + xyxy[3]) / 2 / h, 6),
+             round((xyxy[2] - xyxy[0]) / w, 6),
+             round((xyxy[3] - xyxy[1]) / h, 6)]
+    return cpwhn
 
 
 def parse_args():
@@ -91,10 +103,13 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    parser.add_argument("--max-num-per-cam", type=int, default=3)
-    parser.add_argument("--save-interval", type=int, default=50)
-    parser.add_argument("--box-ratio", type=float, default=0.8)  # height / width
-    parser.add_argument("--execute", type=bool, default=False)
+    out_dir = "/media/daton/Data/datasets/aihub/lying_persons"
+    parser.add_argument("--out-dir", type=str, default=out_dir)
+
+    prefix = "human_action"
+    parser.add_argument("--prefix", type=str, default=prefix)
+    parser.add_argument("--execute", type=bool, default=True)
+    parser.add_argument("--resize", type=int, default=[1280, 720])
 
     args = parser.parse_args()
     return args
@@ -103,3 +118,4 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     main(args)
+

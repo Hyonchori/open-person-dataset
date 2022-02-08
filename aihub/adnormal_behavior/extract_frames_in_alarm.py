@@ -76,13 +76,17 @@ def save_only_target(vid_dir_path, vid_name, annot_name, max_num_per_case, save_
     vid_path = os.path.join(vid_dir_path, vid_name)
     cap = cv2.VideoCapture(vid_path)
     annot_path = os.path.join(vid_dir_path, annot_name)
+    if not os.path.isfile(annot_path):
+        return 0
     with open(annot_path) as f:
         annot = xmltodict.parse(f.read())["annotation"]
         header = annot["header"]
         fps = float(header["fps"])
-        total_frames = float(header["frames"])
-        total_time = time2hms(header["duration"])
-        total_time_delta = datetime.timedelta(hours=total_time[0], minutes=total_time[1], seconds=total_time[2])
+        total_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        total_seconds = total_frames / fps
+        seconds = total_seconds % 60
+        minutes = total_seconds // 60
+        total_time_delta = datetime.timedelta(hours=0, minutes=minutes, seconds=seconds)
 
         event = annot["event"]
         start_time = time2hms(event["starttime"])
@@ -101,9 +105,13 @@ def save_only_target(vid_dir_path, vid_name, annot_name, max_num_per_case, save_
     while True:
         pos_frame = cap.get(cv2.CAP_PROP_POS_FRAMES)
         ret, img = cap.read()
-        imc = cv2.resize(img, dsize=(WIDTH, HEIGHT))
         if not ret or pos_frame >= end_frame:
             break
+        try:
+            imc = cv2.resize(img, dsize=(WIDTH, HEIGHT))
+        except Exception as e:
+            print(str(e))
+            return 0
         if pos_frame == tmp_frame:
             continue
         else:
@@ -134,7 +142,7 @@ def parse_args():
     root = "/media/daton/Data/datasets/이상행동 CCTV 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    out_dir = "/media/daton/Data/datasets/adnormal_behavior_images"
+    out_dir = "/media/daton/Data/datasets/aihub/adnormal_behavior_images"
     parser.add_argument("--out-dir", type=str, default=out_dir)
 
     parser.add_argument("--out-name", type=str, default="exp")
