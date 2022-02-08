@@ -15,10 +15,10 @@ def main(args):
     resize = args.resize
 
     img_out_dir = os.path.join(out_dir, "images")
-    if not os.path.isdir(img_out_dir):
+    if not os.path.isdir(img_out_dir) and execute:
         os.makedirs(img_out_dir)
     label_out_dir = os.path.join(out_dir, "labels")
-    if not os.path.isdir(label_out_dir):
+    if not os.path.isdir(label_out_dir) and execute:
         os.makedirs(label_out_dir)
 
     cnt = 0
@@ -43,18 +43,17 @@ def main(args):
                     target_annot_path = os.path.join(action_dir_path, annot_dict[case], f"annotation_{scene}.json")
                     with open(target_annot_path) as f:
                         target_annot = json.load(f)
-                    cnt += extract_imglabels_to_out_dir(scene_dir_path, target_annot, img_out_dir, label_out_dir, prefix,
-                                                        resize, execute)
+                    cnt = extract_imglabels_to_out_dir(scene_dir_path, target_annot, img_out_dir, label_out_dir, prefix,
+                                                        resize, execute, cnt)
 
     te = time.time()
     print(f"\nTotal images: {cnt}")  # 2012
     print(f"Elapsed time: {te - ts:.2f}s")
 
 
-def extract_imglabels_to_out_dir(img_dir_path, annots, img_out_dir, label_out_dir, prefix, resize, execute):
+def extract_imglabels_to_out_dir(img_dir_path, annots, img_out_dir, label_out_dir, prefix, resize, execute, cnt):
     imgs = sorted(os.listdir(img_dir_path))
     target_indices = [i for i, x in enumerate(annots["frames"]) if x["image"] in imgs]
-    cnt = 0
     for img_name, target_idx in zip(imgs, target_indices):
         img_path = os.path.join(img_dir_path, img_name)
         img = cv2.imread(img_path)
@@ -69,12 +68,12 @@ def extract_imglabels_to_out_dir(img_dir_path, annots, img_out_dir, label_out_di
             label += f"0 {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}\n"
         cnt += 1
         if execute:
+            out_img_path = os.path.join(img_out_dir, f"{prefix}_{cnt:04d}_{img_name}")
+            img = cv2.resize(img, dsize=(resize[0], resize[1]))
+            cv2.imwrite(out_img_path, img)
             label_path = os.path.join(label_out_dir, img_name.replace(".jpg", ".txt"))
             with open(label_path, "w") as f:
                 f.write(label)
-            out_img_path = os.path.join(img_out_dir, f"{prefix}_{img_name}")
-            img = cv2.resize(img, dsize=(resize[0], resize[1]))
-            cv2.imwrite(out_img_path, img)
     return cnt
 
 
@@ -92,12 +91,12 @@ def parse_args():
     root = "/media/daton/Data/datasets/지하철 역사 내 CCTV 이상행동 영상"
     parser.add_argument("--root", type=str, default=root)
 
-    out_dir = "/media/daton/Data/datasets/aihub/lying_persons"
+    out_dir = "/media/daton/Data/datasets/aihub/subway_cctv"
     parser.add_argument("--out-dir", type=str, default=out_dir)
 
     prefix = "subway_cctv"
     parser.add_argument("--prefix", type=str, default=prefix)
-    parser.add_argument("--execute", type=bool, default=False)
+    parser.add_argument("--execute", type=bool, default=True)
     parser.add_argument("--resize", type=int, default=[1280, 720])
 
     args = parser.parse_args()
