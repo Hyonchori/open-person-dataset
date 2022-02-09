@@ -84,7 +84,8 @@ def extract_imglabels_to_out_dir(img_dir_path, annot, img_out_dir, label_out_dir
         label = f"0 {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}"
 
         if execute:
-            out_img_path = os.path.join(img_out_dir, f"{prefix}_{img_name}")
+            img_name = f"{prefix}_{img_name}"
+            out_img_path = os.path.join(img_out_dir, img_name)
             img = cv2.resize(img, dsize=(resize[0], resize[1]))
             cv2.imwrite(out_img_path, img)
             label_path = os.path.join(label_out_dir, img_name.replace(".jpg", ".txt"))
