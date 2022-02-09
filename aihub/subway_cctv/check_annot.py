@@ -5,7 +5,7 @@ import cv2
 
 
 SPLITS = {1: "Training", 2: "Validation"}
-ACTIONS = {1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도"}
+ACTIONS = {1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도", 5: "배회"}
 
 
 def view_annot(root, target_split=None, target_action=None, target_case=None, target_scene=None):
@@ -49,11 +49,14 @@ def visualize_one_vid(img_dir_path, annots, txt_org=(30, 70), font_size=5, font_
         action = "Fall down in stair"
     elif "에스컬레이터" in action_dir:
         action = "Fall down in escalator"
+    elif "배회" in action_dir:
+        action = "Loitering"
     else:
         action = "Fall down"
     label = f"{action}: {img_dir_path.split('/')[-1]}"
     imgs = sorted(os.listdir(img_dir_path))
     target_indices = [i for i, x in enumerate(annots["frames"]) if x["image"] in imgs]
+    print(f"\n--- Processing {img_dir_path}")
     for img_name, target_idx in zip(imgs, target_indices):
         img_path = os.path.join(img_dir_path, img_name)
         img = cv2.imread(img_path)
@@ -85,10 +88,10 @@ if __name__ == "__main__":
     root = "/media/daton/Data/datasets/지하철 역사 내 CCTV 이상행동 영상"
 
     target_split = 2
-    target_action = 1
-    target_case = 10
+    target_action = 5
+    target_case = None
     target_scene = None
-    # actions = {1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도"}
+    # actions = {1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도", 5: "배회"}
     view_annot(root,
                target_split=target_split,
                target_action=target_action,
