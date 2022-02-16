@@ -74,10 +74,10 @@ for v in loitering_list.values():
             out_rain += v[3]
     else:
         _in += v[3]
-
-print(out_count, _in)
-print(out_night, out_day)
-print(out_rain, out_sunny)
+print(f"\n--- 배회 데이터셋 객체 구성: 총 {out_count + _in}")
+print(f"야외: {out_count}, 실내: {_in}")
+print(f"야외 야간: {out_night}, 야외 주간: {out_day}")
+print(f"야외 우천시: {out_rain}, 야외 맑음: {out_sunny}")
 print("\n-----------------------------------------\n")
 
 # state: [in/out, out_night/out_day, out_rainy/out_sunny, num]
@@ -158,7 +158,7 @@ for v in intrusion_list.values():
             out_rain += v[3]
     else:
         _in += v[3]
-
-print(out_count, _in)
-print(out_night, out_day)
-print(out_rain, out_sunny)
+print(f"\n--- 침입 데이터셋 구성: {out_count + _in}")
+print(f"야외: {out_count}, 실내: {_in}")
+print(f"야외 야간: {out_night}, 야외 주간: {out_day}")
+print(f"야외 우천시: {out_rain}, 야외 맑음: {out_sunny}")

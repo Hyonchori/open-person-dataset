@@ -2,7 +2,6 @@ import argparse
 import os
 import datetime
 import time
-from pathlib import Path
 
 import cv2
 import xmltodict
@@ -109,11 +108,12 @@ def get_gt_from_annot(annot_path):
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    target_dir = "/home/daton/Desktop/gs/loitering"
     target_dir = "/home/daton/Desktop/gs/intrusion"
     parser.add_argument("--target-dir", type=str, default=target_dir)
 
-    '''
-    #  loitering videos from KISA dataset
+
+    '''#  loitering videos from KISA dataset
     vid_list = ["C045100_001", "C045100_002", "C045100_003", "C045100_004", "C045300_003", "C045300_004"]
     vid_list = ["C001101_003", "C001201_004"]
     vid_list = ["C007101_001", "C007201_002", "C007201_005"]
@@ -127,8 +127,8 @@ def parse_args():
     vid_list = ["C058100_002", "C058100_004", "C058200_008"]
     vid_list = ["C002201_004", "C004301_003", "C005101_002", "C006101_002", "C008201_002", "C008301_005", "C017101_001",
                 "C050100_005"]
-    vid_list = ["C082100_003", "C086100_005", "C087100_006", "C099100_005", "C104300_032"]
-    '''
+    vid_list = ["C082100_003", "C086100_005", "C087100_006", "C099100_005", "C104300_032"]'''
+
 
     #  intrusion videos from KISA dataset
     vid_list = ["C001202_001", "C001302_004"]
@@ -147,6 +147,8 @@ def parse_args():
     vid_list = ["C092101_001", "C092201_002"]
     vid_list = ["C106201_017", "C106301_024"]
     vid_list = ["C114101_001"]
+    vid_list = ["C016302_007"]
+
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
 
     label_dir_list = ["/media/daton/SAMSUNG/3. 연구개발분야/3. 바이오인식(1500개)/1. 얼굴(1410개)",
@@ -159,13 +161,13 @@ def parse_args():
     save_dir = "/home/daton/Desktop/gs"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    save_name = "KISA_intrusion_19"
+    save_name = "KISA_intrusion_20"
     parser.add_argument("--save-name", type=str, default=save_name)
 
     vid_interval = 1  # n second
     parser.add_argument("--vid-interval", type=int, default=vid_interval)
 
-    event_start_interval = 35  # n second, {loitering: 15, intrusion: 5}
+    event_start_interval = 20  # n second, {loitering: 15, intrusion: 5}
     parser.add_argument("--event-start-interval", type=int, default=event_start_interval)
 
     event_end_interval = 0  # n second
