@@ -69,8 +69,8 @@ def view_annot(img_dir, bbox_label_root, action_label_root, target_action=None):
         target_img = cv2.imread(target_img_path)
         plot_bboxes(target_bboxes, target_img)
         img_name = target_action if target_action is not None else "image"
-        #cv2.imshow(img_name, target_img)
-        #cv2.waitKey(0)
+        cv2.imshow(img_name, target_img)
+        cv2.waitKey(0)
 
 
 if __name__ == "__main__":

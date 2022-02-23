@@ -95,6 +95,7 @@ def parse_args():
 
     vid_path = "/home/daton/Desktop/gs/loitering_gs/KISA_loitering_13.mp4"
     vid_path = "/home/daton/Desktop/gs/intrusion_gs/KISA_intrusion_20.mp4"
+    vid_path = "/media/daton/SAMSUNG/4. 민간분야(2021 특수환경)/distribution/C123200_009.mp4"
     parser.add_argument("--vid-path", type=str, default=vid_path)
 
     save = True
