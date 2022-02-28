@@ -115,7 +115,7 @@ if __name__ == "__main__":
     target_action = 5
     target_split = 3
     target_case = 1
-    target_take = None
+    target_take = 1
     target_scene = None
     # actions = {5: "05.실신(swoon)"}
     # splits = {1: "inside_croki", 2: "insidedoor", 3: "outsidedoor"}
