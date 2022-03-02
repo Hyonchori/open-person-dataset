@@ -1,5 +1,9 @@
 # Check bounding box annotation
 import os
+import json
+from pathlib import Path
+
+import cv2
 
 
 SPLITS = {1: "Training", 2: "Validation"}
@@ -21,7 +25,7 @@ def get_dirs_in_root(tmp_root):
 
 
 def view_annot(root, target_split=None, target_label=None, target_case=None, target_sit=None, target_sit_idx=None,
-               target_vid_idx=None):
+               target_vid_idx=None, view_size=(1280, 720)):
     splits = get_dirs_in_root(root)
     if target_split is not None:
         assert target_split in SPLITS, f"Given target split '{target_split}' is not in {SPLITS}."
@@ -60,6 +64,42 @@ def view_annot(root, target_split=None, target_label=None, target_case=None, tar
                         vid_dir_path = os.path.join(sit_dir_path, vid)
                         annot_dir_path = vid_dir_path.replace("[원천]", "[라벨]")
                         annot_path = os.path.join(annot_dir_path, vid.replace(".mp4", ".json"))
+                        view_one_vid(vid_dir_path, annot_path, resize=view_size)
+
+
+def view_one_vid(vid_dir_path, annot_path, txt_org=(10, 50), font_size=3, font_thickness=3, resize=(1280, 720)):
+    print(f"\n--- Processing {vid_dir_path}")
+    imgs = sorted(os.listdir(vid_dir_path))
+    with open(annot_path) as f:
+        annots = json.load(f)["annotation"]["annotations"]
+        annots = sorted(annots, key=lambda annot: annot["atchOrgFileName"])
+    for img_name, annot in zip(imgs, annots):
+        print("\n---")
+        img_path = os.path.join(vid_dir_path, img_name)
+        img = cv2.imread(img_path)
+        print(img_name)
+        bboxes = annot["box"]
+        for bbox in bboxes:
+            if bbox["category_name"] != "person":
+                continue
+            print(bbox)
+            xyxy = bbox2xyxy(bbox["box"])
+            img = cv2.rectangle(img, xyxy[:2], xyxy[2:], [0, 0, 255], 2)
+
+        img = cv2.resize(img, dsize=(resize))
+        cv2.imshow("img", img)
+        if cv2.waitKey(0) & 0xFF == ord('q'):
+            break
+        elif cv2.waitKey(0) & 0xFF == ord('s'):
+            print("save!")
+
+
+def bbox2xyxy(bbox):
+    xyxy = [int(bbox["x"]),
+            int(bbox["y"]),
+            int(bbox["x"] + bbox["w"]),
+            int(bbox["y"] + bbox["h"])]
+    return xyxy
 
 
 if __name__ == "__main__":
@@ -67,13 +107,15 @@ if __name__ == "__main__":
     target_split = 1
     target_label = 1
     target_case = 1
-    target_sit = 15
-    target_sit_idx = 1
+    target_sit = 14
+    target_sit_idx = None
     target_vid_idx = None
+    view_size = (1280, 720)
     view_annot(root,
                target_split=target_split,
                target_label=target_label,
                target_case=target_case,
                target_sit=target_sit,
                target_sit_idx=target_sit_idx,
-               target_vid_idx=target_vid_idx)
+               target_vid_idx=target_vid_idx,
+               view_size=view_size)
