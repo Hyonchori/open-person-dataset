@@ -73,6 +73,7 @@ def main(args):
             img = np.ones((height, width, 3), dtype=np.uint8)
             for _ in range(vid_interval * vid_fps):
                 vid_writer.write(img)
+    print(f"\nsave {save_name}!")
 
 
 def time2hms(t):
@@ -108,12 +109,12 @@ def get_gt_from_annot(annot_path):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    target_dir = "/home/daton/Desktop/gs/loitering"
     target_dir = "/home/daton/Desktop/gs/intrusion"
+    #target_dir = "/home/daton/Desktop/gs/intrusion"
     parser.add_argument("--target-dir", type=str, default=target_dir)
 
 
-    '''#  loitering videos from KISA dataset
+    #  loitering videos from KISA dataset
     vid_list = ["C045100_001", "C045100_002", "C045100_003", "C045100_004", "C045300_003", "C045300_004"]
     vid_list = ["C001101_003", "C001201_004"]
     vid_list = ["C007101_001", "C007201_002", "C007201_005"]
@@ -125,29 +126,31 @@ def parse_args():
     vid_list = ["C055200_001", "C055200_005", "C055200_011"]
     vid_list = ["C056200_002", "C056200_004"]
     vid_list = ["C058100_002", "C058100_004", "C058200_008"]
-    vid_list = ["C002201_004", "C004301_003", "C005101_002", "C006101_002", "C008201_002", "C008301_005", "C017101_001",
-                "C050100_005"]
-    vid_list = ["C082100_003", "C086100_005", "C087100_006", "C099100_005", "C104300_032"]'''
-
+    vid_list = ["C002201_004", "C004301_003", "C005101_002", "C006101_002", "C008201_002", "C008301_005", "C017101_001", "C050100_005"]
+    vid_list = ["C082100_003", "C086100_005", "C087100_006", "C099100_005", "C104300_032"]
 
     #  intrusion videos from KISA dataset
-    vid_list = ["C001202_001", "C001302_004"]
-    vid_list = ["C002202_001", "C002202_003"]
-    vid_list = ["C013102_002", "C013202_003"]
-    vid_list = ["C016202_011", "C016302_007"]
-    vid_list = ["C045101_002", "C045101_003", "C045101_004", "C045101_006", "C045101_009", "C045101_010", "C045201_011",
-                "C045301_004", "C045301_006"]
-    vid_list = ["C050101_011", "C050101_013", "C050101_014", "C050101_015", "C050201_010", "C050301_009", "C050301_010",
-                "C050301_011"]
-    vid_list = ["C055101_005", "C055101_007", "C055201_002", "C055201_005", "C055201_007", "C055301_001", "C055301_007",
-                "C055301_010"]
-    vid_list = ["C058101_002", "C058101_013"]
-    vid_list = ["C058301_001", "C058301_010", "C058301_015"]
-    vid_list = ["C082101_002", "C082201_005"]
-    vid_list = ["C092101_001", "C092201_002"]
-    vid_list = ["C106201_017", "C106301_024"]
-    vid_list = ["C114101_001"]
-    vid_list = ["C016302_007"]
+    vid_list = ["C001202_001", "C001302_004"]  # 2
+    vid_list = ["C002202_001", "C002202_003"]  # 2
+    vid_list = ["C013102_002", "C013202_003"]  # 2
+    vid_list = ["C016202_011", "C016302_007"]  # 2
+    vid_list = ["C045101_002", "C045101_003", "C045101_004", "C045101_006", "C045101_009", "C045101_010", "C045201_011", "C045301_004", "C045301_006"]  # 9
+    vid_list = ["C050101_011", "C050101_013", "C050101_014", "C050101_015", "C050201_010", "C050301_009", "C050301_010", "C050301_011"]  # 8
+    vid_list = ["C055101_005", "C055101_007", "C055201_002", "C055201_005", "C055201_007", "C055301_001", "C055301_007", "C055301_010"]  # 8
+    vid_list = ["C058101_002", "C058101_013"]  # 2
+    vid_list = ["C058301_001", "C058301_010", "C058301_015"]  # 3
+    vid_list = ["C082101_002", "C082201_005"]  # 2
+    vid_list = ["C092101_001", "C092201_002"]  # 2
+    vid_list = ["C106201_017", "C106301_024"]  # 2
+    # 44
+
+    vid_list = ["C003102_001"]  # 1
+    vid_list = ["C019102_001"]  # 1
+    vid_list = ["C021102_001"]  # 1
+    vid_list = ["C090201_003"]  # 1
+    vid_list = ["C098201_004"]  # 1
+    vid_list = ["C104301_001"]  # 1
+    vid_list = ["C114101_001"]  # 1
 
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
 
@@ -161,16 +164,16 @@ def parse_args():
     save_dir = "/home/daton/Desktop/gs"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    save_name = "KISA_intrusion_20"
+    save_name = "KISA_intrusion_19"
     parser.add_argument("--save-name", type=str, default=save_name)
 
-    vid_interval = 1  # n second
+    vid_interval = 3  # n second
     parser.add_argument("--vid-interval", type=int, default=vid_interval)
 
-    event_start_interval = 20  # n second, {loitering: 15, intrusion: 5}
+    event_start_interval = 10  # n second, {loitering: 15, intrusion: 5}
     parser.add_argument("--event-start-interval", type=int, default=event_start_interval)
 
-    event_end_interval = 0  # n second
+    event_end_interval = 5  # n second
     parser.add_argument("--event-end-interval", type=int, default=event_end_interval)
 
     event_duration = 10
@@ -179,7 +182,7 @@ def parse_args():
     fps = 30
     parser.add_argument("--fps", type=int, default=fps)
 
-    width = 1080
+    width = 1280
     parser.add_argument("--width", type=int, default=width)
 
     height = 720
@@ -188,7 +191,7 @@ def parse_args():
     save = True
     parser.add_argument("--save", action="store_true", default=save)
 
-    show = True
+    show = False
     parser.add_argument("--show", action="store_true", default=show)
 
     args = parser.parse_args()

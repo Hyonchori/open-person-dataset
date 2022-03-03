@@ -67,12 +67,14 @@ def view_annot(root, target_split=None, target_label=None, target_case=None, tar
                         view_one_vid(vid_dir_path, annot_path, resize=view_size)
 
 
-def view_one_vid(vid_dir_path, annot_path, txt_org=(10, 50), font_size=3, font_thickness=3, resize=(1280, 720)):
+def view_one_vid(vid_dir_path, annot_path, txt_org=(10, 40), font_size=3, font_thickness=3, resize=(1280, 720)):
     print(f"\n--- Processing {vid_dir_path}")
     imgs = sorted(os.listdir(vid_dir_path))
     with open(annot_path) as f:
         annots = json.load(f)["annotation"]["annotations"]
         annots = sorted(annots, key=lambda annot: annot["atchOrgFileName"])
+    info = f"{Path(vid_dir_path).name}"
+    info_size = cv2.getTextSize(info, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)[0]
     for img_name, annot in zip(imgs, annots):
         print("\n---")
         img_path = os.path.join(vid_dir_path, img_name)
@@ -86,6 +88,8 @@ def view_one_vid(vid_dir_path, annot_path, txt_org=(10, 50), font_size=3, font_t
             xyxy = bbox2xyxy(bbox["box"])
             img = cv2.rectangle(img, xyxy[:2], xyxy[2:], [0, 0, 255], 2)
 
+        cv2.rectangle(img, (0, 0), (info_size[0] + 10, info_size[1] * 2), [0, 0, 0], -1)
+        cv2.putText(img, info, txt_org, cv2.FONT_HERSHEY_PLAIN, font_size, (255, 255, 255), font_thickness, cv2.LINE_AA)
         img = cv2.resize(img, dsize=(resize))
         cv2.imshow("img", img)
         if cv2.waitKey(0) & 0xFF == ord('q'):
