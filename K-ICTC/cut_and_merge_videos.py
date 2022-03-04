@@ -143,7 +143,6 @@ def parse_args():
     vid_list = ["C092101_001", "C092201_002"]  # 2
     vid_list = ["C106201_017", "C106301_024"]  # 2
     # 44
-
     vid_list = ["C003102_001"]  # 1
     vid_list = ["C019102_001"]  # 1
     vid_list = ["C021102_001"]  # 1
@@ -151,8 +150,10 @@ def parse_args():
     vid_list = ["C098201_004"]  # 1
     vid_list = ["C104301_001"]  # 1
     vid_list = ["C114101_001"]  # 1
-
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
+
+    save_name = "KISA_intrusion_19"
+    parser.add_argument("--save-name", type=str, default=save_name)
 
     label_dir_list = ["/media/daton/SAMSUNG/3. 연구개발분야/3. 바이오인식(1500개)/1. 얼굴(1410개)",
                       "/media/daton/SAMSUNG/3. 연구개발분야/3. 바이오인식(1500개)/2. 걸음걸이(90개)",
@@ -164,13 +165,10 @@ def parse_args():
     save_dir = "/home/daton/Desktop/gs"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    save_name = "KISA_intrusion_19"
-    parser.add_argument("--save-name", type=str, default=save_name)
-
     vid_interval = 3  # n second
     parser.add_argument("--vid-interval", type=int, default=vid_interval)
 
-    event_start_interval = 10  # n second, {loitering: 15, intrusion: 5}
+    event_start_interval = 25  # n second, {loitering: 15, intrusion: 5}
     parser.add_argument("--event-start-interval", type=int, default=event_start_interval)
 
     event_end_interval = 5  # n second

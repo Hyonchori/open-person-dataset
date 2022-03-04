@@ -1,14 +1,18 @@
 # Read youtube video list and save videos
 import argparse
 import os
-import sys
 import multiprocessing as mp
-from pathlib import Path
 from datetime import timedelta
 from collections import deque
 
 import cv2
 import pandas
+
+
+EXCEPTION_LIST = [
+    "https://www.youtube.com/watch?v=BQXYQTpelSA",
+    "https://www.youtube.com/watch?v=ijxATCTNCZc"
+]
 
 
 def get_youtube_stream(source):
@@ -19,7 +23,7 @@ def get_youtube_stream(source):
 
 
 def time2timedelta(tmp_time):
-    time_split = tmp_time.split(".")
+    time_split = list(map(int, tmp_time.split(".")))
     if len(time_split) == 3:
         m, s, ms = time_split
         tmp_timedelta = timedelta(minutes=m, seconds=s, milliseconds=ms)
@@ -30,9 +34,49 @@ def time2timedelta(tmp_time):
 
 
 def save_youtube_video(vid_item):
-    print(vid_item)
+    vid_link, vid_start_times, vid_end_times, vid_title, save_dir, target_size, save = vid_item
+    if vid_link in EXCEPTION_LIST:
+        return
+    print(f"\n--- Start saving video from {vid_link}, {vid_title}")
+    vid_source = get_youtube_stream(vid_link)
+    cap = cv2.VideoCapture(vid_source)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = 30 if fps == 0 else fps
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_seconds = int(total_frames / fps)
+    total_timedelta = timedelta(seconds=total_seconds)
+    print(f"\tfps: {fps}, total_times: {total_timedelta}, total_frames: {total_frames}, total_interval: {len(vid_start_times)}")
 
+    for i, (start_time, end_time) in enumerate(zip(vid_start_times, vid_end_times)):
+        if save:
+            save_path = os.path.join(save_dir, vid_title + f"_{i + 1}.mp4")
+            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, target_size)
+        start_time_delta = time2timedelta(start_time)
+        start_time_rate = start_time_delta / total_timedelta
+        start_frame = int(total_frames * start_time_rate)
+        end_time_delta = time2timedelta(end_time)
+        end_time_rate = end_time_delta / total_timedelta
+        end_frame = int(total_frames * end_time_rate)
+        print(f"\t\t{i + 1}'s tmp_start: {start_time_delta}, tmp_end: {end_time_delta}")
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
+        tmp_frame1 = start_frame
+        while True:
+            ret, img = cap.read()
+            if not ret:
+                break
+            tmp_frame2 = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+            if tmp_frame1 == tmp_frame2:
+                continue
+            else:
+                tmp_frame1 = tmp_frame2
+            img = cv2.resize(img, dsize=target_size)
+            if save:
+                vid_writer.write(img)
+            if tmp_frame1 == end_frame:
+                break
+    cap.release()
+    print(f"\tSave {i + 1} videos from {vid_link}")
 
 
 def main(args):
@@ -49,7 +93,7 @@ def main(args):
     xlsx = pandas.read_excel(real_dataset_xlsx)
     vid_indices = xlsx.index
     vid_nums = len(vid_indices)
-    vid_links = set(xlsx["Video Link"])
+    vid_links = sorted(list(set(xlsx["Video Link"])))
     vid_titles = xlsx["Video Title"]
     vid_start_times = xlsx["Start"]
     vid_end_times = xlsx["End"]
@@ -59,8 +103,6 @@ def main(args):
     total_titles = []
     for vid_link in vid_links:
         tmp_indices = xlsx["Video Link"] == vid_link
-        print(f"\n--- {list(vid_titles[tmp_indices])[0]}")
-
         tmp_start_times = list(vid_start_times[tmp_indices])
         tmp_end_times = list(vid_end_times[tmp_indices])
         tmp_times = [["start", x] for x in tmp_start_times] + [["end", x] for x in tmp_end_times]
@@ -79,16 +121,13 @@ def main(args):
                 last_state = tmp_state
             else:
                 refined_times[-1][1] = tmp_time
-        print(refined_times)
-
-        total_start_times.append(vid_start_times[tmp_indices])
-        total_end_times.append(vid_end_times[tmp_indices])
+        total_start_times.append([x[1] for x in refined_times if x[0] == "start"])
+        total_end_times.append([x[1] for x in refined_times if x[0] == "end"])
         total_titles.append(list(vid_titles[tmp_indices])[0])
 
-    print(len(vid_links))
-    print(len(total_start_times), len(total_end_times), len(total_titles))
-
-    return
+    #for vid_link, start_times, end_times, title in zip(vid_links, total_start_times, total_end_times, total_titles):
+    #    save_youtube_video((vid_link, start_times, end_times, title, save_dir, target_size, save))
+    #return
     pool = mp.Pool(num_workers)
     pool.map(
         save_youtube_video,
@@ -113,7 +152,7 @@ def parse_args():
     target_size = [1280, 720]
     parser.add_argument("--target-size", type=int, default=target_size)
 
-    parser.add_argument("--num-workers", type=int, default=8)
+    parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--save", action="store_true", default=True)
 
     args = parser.parse_args()
