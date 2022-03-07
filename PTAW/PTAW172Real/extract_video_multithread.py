@@ -91,7 +91,7 @@ def main(args):
     num_workers = args.num_workers
     save = args.save
 
-    if not os.path.isdir(save_dir):
+    if not os.path.isdir(save_dir) and save:
         os.makedirs(save_dir)
     assert os.path.isfile(real_dataset_xlsx), "Given dataset_xlsx'path is wrong!"
     xlsx = pandas.read_excel(real_dataset_xlsx)
