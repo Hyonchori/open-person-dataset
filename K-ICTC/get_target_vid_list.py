@@ -120,7 +120,7 @@ def parse_args():
 
     parser.add_argument("--kisa-root", type=str, default="/media/daton/SAMSUNG")
     parser.add_argument("--dev_or_civil", type=int, default=4)  # 3: 해외환경, 4: 민간
-    parser.add_argument("--target_class", type=int, default=[1])
+    parser.add_argument("--target_class", type=int, default=[2])
 
     args = parser.parse_args()
     return args

@@ -138,6 +138,7 @@ def main(args):
     print(f"\n--- Elapsed time: {te - ts:.2f}")
     return'''
 
+    # Using multithread (233.69 -> 79.46 when num_workers=8)
     pool = mp.Pool(num_workers)
     pool.map(
         extract_video,
@@ -161,10 +162,10 @@ def parse_args():
     vid_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/rawvideos"
     parser.add_argument("--vid-dir", type=str, default=vid_dir)
 
-    save_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/extracted_videos"
+    save_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/extracted_videos3"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--num-workers", type=int, default=8)
     parser.add_argument("--save", action="store_true", default=True)
 
     args = parser.parse_args()

@@ -147,12 +147,13 @@ def parse_args():
     vid_list = ["C019102_001"]  # 1
     vid_list = ["C021102_001"]  # 1
     vid_list = ["C090201_003"]  # 1
-    vid_list = ["C098201_004"]  # 1
+    vid_list = ["C098201_004"]  # 1   ,remove this video (can't detect person well)
     vid_list = ["C104301_001"]  # 1
     vid_list = ["C114101_001"]  # 1
+    vid_list = ["C110101_004"]  # 1   ,newly add this video
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
 
-    save_name = "KISA_intrusion_19"
+    save_name = "KISA_intrusion_17"
     parser.add_argument("--save-name", type=str, default=save_name)
 
     label_dir_list = ["/media/daton/SAMSUNG/3. 연구개발분야/3. 바이오인식(1500개)/1. 얼굴(1410개)",
@@ -168,7 +169,7 @@ def parse_args():
     vid_interval = 3  # n second
     parser.add_argument("--vid-interval", type=int, default=vid_interval)
 
-    event_start_interval = 25  # n second, {loitering: 15, intrusion: 5}
+    event_start_interval = 35  # n second, {loitering: 15, intrusion: 5}
     parser.add_argument("--event-start-interval", type=int, default=event_start_interval)
 
     event_end_interval = 5  # n second
