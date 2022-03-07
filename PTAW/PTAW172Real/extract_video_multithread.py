@@ -1,6 +1,8 @@
-# Read youtube video list and save videos
+# Extract valid video from rawvideos
 import argparse
 import os
+import time
+import difflib
 import multiprocessing as mp
 from datetime import timedelta
 from collections import deque
@@ -15,13 +17,6 @@ EXCEPTION_LIST = [
 ]
 
 
-def get_youtube_stream(source):
-    if "youtube.com/" in source or "youtu.be" in source:
-        import pafy
-        source = pafy.new(source).getbest(preftype="mp4").url
-    return source
-
-
 def time2timedelta(tmp_time):
     time_split = list(map(int, tmp_time.split(".")))
     if len(time_split) == 3:
@@ -33,31 +28,42 @@ def time2timedelta(tmp_time):
     return tmp_timedelta
 
 
-def save_youtube_video(vid_item):
-    vid_link, vid_start_times, vid_end_times, vid_title, save_dir, target_size, save = vid_item
+def extract_video(vid_item, verbose=False):
+    vid_link, vid_start_times, vid_end_times, vid_title, vid_dir, save_dir, save = vid_item
     if vid_link in EXCEPTION_LIST:
         return
-    print(f"\n--- Start saving video from {vid_link}, {vid_title}")
-    vid_source = get_youtube_stream(vid_link)
-    cap = cv2.VideoCapture(vid_source)
+    vid_title = vid_title.replace("\n", "")
+    if verbose:
+        print(f"\n--- Processing {vid_title}")
+    vid_name = [x for x in os.listdir(vid_dir) if vid_title in x]
+    if len(vid_name) == 0:
+        vid_name = difflib.get_close_matches(vid_title, os.listdir(vid_dir))
+    if len(vid_name) == 0:  # for "Snowy Aomori on New Year night"
+        vid_name = [x for x in os.listdir(vid_dir) if " ".join(vid_title.split("  ")[-1].split()[1:]).lower() in x.lower()]
+    vid_path = os.path.join(vid_dir, vid_name[0])
+    cap = cv2.VideoCapture(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    fps = 30 if fps == 0 else fps
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     total_seconds = int(total_frames / fps)
     total_timedelta = timedelta(seconds=total_seconds)
-    print(f"\tfps: {fps}, total_times: {total_timedelta}, total_frames: {total_frames}, total_interval: {len(vid_start_times)}")
+    if verbose:
+        print(f"\tfps: {fps:.2f}, total_times: {total_timedelta}, total_frames: {total_frames}, total_interval: {len(vid_start_times)}")
 
     for i, (start_time, end_time) in enumerate(zip(vid_start_times, vid_end_times)):
         if save:
-            save_path = os.path.join(save_dir, vid_title + f"_{i + 1}.mp4")
-            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, target_size)
+            save_name = vid_name[0].replace(".mp4", f"_{i + 1}.mp4")
+            save_path = os.path.join(save_dir, save_name)
+            vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
         start_time_delta = time2timedelta(start_time)
         start_time_rate = start_time_delta / total_timedelta
         start_frame = int(total_frames * start_time_rate)
         end_time_delta = time2timedelta(end_time)
         end_time_rate = end_time_delta / total_timedelta
         end_frame = int(total_frames * end_time_rate)
-        print(f"\t\t{i + 1}'s tmp_start: {start_time_delta}, tmp_end: {end_time_delta}")
+        if verbose:
+            print(f"\t\t{i + 1}'s tmp_start: {start_time_delta}, tmp_end: {end_time_delta}")
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
         tmp_frame1 = start_frame
@@ -70,7 +76,6 @@ def save_youtube_video(vid_item):
                 continue
             else:
                 tmp_frame1 = tmp_frame2
-            img = cv2.resize(img, dsize=target_size)
             if save:
                 vid_writer.write(img)
             if tmp_frame1 == end_frame:
@@ -81,16 +86,16 @@ def save_youtube_video(vid_item):
 
 def main(args):
     real_dataset_xlsx = args.real_dataset_xlsx
+    vid_dir = args.vid_dir
     save_dir = args.save_dir
-    target_size = args.target_size
     num_workers = args.num_workers
     save = args.save
 
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
-
     assert os.path.isfile(real_dataset_xlsx), "Given dataset_xlsx'path is wrong!"
     xlsx = pandas.read_excel(real_dataset_xlsx)
+
     vid_indices = xlsx.index
     vid_nums = len(vid_indices)
     vid_links = sorted(list(set(xlsx["Video Link"])))
@@ -125,19 +130,26 @@ def main(args):
         total_end_times.append([x[1] for x in refined_times if x[0] == "end"])
         total_titles.append(list(vid_titles[tmp_indices])[0])
 
-    #for vid_link, start_times, end_times, title in zip(vid_links, total_start_times, total_end_times, total_titles):
-    #    save_youtube_video((vid_link, start_times, end_times, title, save_dir, target_size, save))
-    #return
+    ts = time.time()
+    # Just iteration
+    '''for link, start_times, end_times, title in zip(vid_links, total_start_times, total_end_times, total_titles):
+        extract_video((link, start_times, end_times, title, vid_dir, save_dir, save), True)
+    te = time.time()
+    print(f"\n--- Elapsed time: {te - ts:.2f}")
+    return'''
+
     pool = mp.Pool(num_workers)
     pool.map(
-        save_youtube_video,
+        extract_video,
         zip(vid_links, total_start_times, total_end_times, total_titles,
+            vid_nums * [vid_dir],
             vid_nums * [save_dir],
-            vid_nums * [target_size],
             vid_nums * [save])
     )
     pool.close()
     pool.join()
+    te = time.time()
+    print(f"\n--- Elapsed time: {te - ts:.2f}")
 
 
 def parse_args():
@@ -146,11 +158,11 @@ def parse_args():
     real_dataset_xlsx = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real.xlsx"
     parser.add_argument("--real-dataset-xlsx", type=str, default=real_dataset_xlsx)
 
-    save_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/rawvideos"
-    parser.add_argument("--save-dir", type=str, default=save_dir)
+    vid_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/rawvideos"
+    parser.add_argument("--vid-dir", type=str, default=vid_dir)
 
-    target_size = [1280, 720]
-    parser.add_argument("--target-size", type=int, default=target_size)
+    save_dir = "/media/daton/Data/datasets/PTAW/PTAW_Datasets/PTAW172Real/extracted_videos"
+    parser.add_argument("--save-dir", type=str, default=save_dir)
 
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--save", action="store_true", default=True)
