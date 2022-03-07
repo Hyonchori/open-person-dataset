@@ -1,17 +1,17 @@
-# Extract farmes by push "s" button from input video
+# Extract frames by push "s" button from input video
 import argparse
 import os
 import time
 from pathlib import Path
 
 import cv2
-from tqdm import tqdm
 
 
-def plot_label(img, label, font_size=2, font_thickness=2):
+def plot_label(img, label, font_size=1, font_thickness=1):
     label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)[0]
     cv2.rectangle(img, (0, 0), (label_size[0] + 10, label_size[1] * 2), [0, 0, 0], -1)
-    cv2.putText(img, label, (5, 30), cv2.FONT_HERSHEY_PLAIN, font_size, (255, 255, 255), font_thickness, cv2.LINE_AA)
+    cv2.putText(img, label, (5, int(label_size[1] * 1.5))
+                , cv2.FONT_HERSHEY_PLAIN, font_size, (255, 255, 255), font_thickness, cv2.LINE_AA)
 
 
 def main(args):
@@ -56,20 +56,18 @@ def main(args):
                 break
             elif keyboard_input == ord('r'):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            elif keyboard_input == 81:
+            elif keyboard_input in [81, 97]:
                 # left direction
                 target_frame = max(0, tmp_frame - 10)
                 cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
-            elif keyboard_input == 83:
+            elif keyboard_input in [83, 100]:
                 # right direction
                 target_frame = min(total_frames, tmp_frame + 10)
                 cap.set(cv2.CAP_PROP_POS_FRAMES, target_frame)
             else:
                 continue
-        cv2.destroyAllWindows()
         time.sleep(0.1)
         print(f"\ttotal {cnt} frames are saved from {Path(vid_name).name}!")
-
 
 
 def parse_args():
