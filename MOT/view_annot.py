@@ -197,7 +197,7 @@ def parse_args():
     parser.add_argument("--select", type=int, default=2)   # 1: MOT17, 2: MOT20
 
     target_idx = [5]
-    target_idx = None
+    #target_idx = None
     parser.add_argument("--target-idx", type=str, default=target_idx)  # video idx list: [1, 2, 3, ...]
 
     target_cls = [1, 2, 7]

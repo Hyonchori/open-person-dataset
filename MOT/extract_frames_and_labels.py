@@ -1,6 +1,6 @@
 # Extract frames by interval from images
-# MOT17 => total frame: 108, total obj: 2092 with interval 50 visibility threshold 0.1
-# MOT20 => total frame: 62, total obj: 8760 with interval 150 visibility threshold 0.0
+# MOT17 => total frame: 108, total obj: 2092 with interval 50, visibility threshold 0.1
+# MOT20 => total frame: 38, total obj: 5243 with interval 250, visibility threshold 0.0
 import argparse
 import os
 import re
@@ -183,14 +183,14 @@ def main(args):
                 img_save_path = os.path.join(img_save_dir, f"{vid_name}_{img_name}")
                 cv2.imwrite(img_save_path, img)
                 if save_labels:
-                    gt_save_path = os.path.join(gt_save_dir, img_name.split(".")[0] + ".txt")
+                    gt_save_path = os.path.join(gt_save_dir, f"{vid_name}_{img_name}".split(".")[0] + ".txt")
                     with open(gt_save_path, "w") as f:
                         f.write(txt)
         cv2.destroyAllWindows()
         print(f"\tframe: {frame_cnt}, obj: {obj_cnt}")
         total_frame_cnt += frame_cnt
         total_obj_cnt += obj_cnt
-    print(f"\ntotal frame: {total_frame_cnt}, total obj: {total_obj_cnt} with interval {interval}" +
+    print(f"\ntotal frame: {total_frame_cnt}, total obj: {total_obj_cnt} with interval {interval}," +
           f" visibility threshold {visibility_thr}")
 
 
@@ -271,7 +271,7 @@ def parse_args():
 
     root = "/media/daton/Data/datasets/mot"
     parser.add_argument("--root", type=str, default=root)
-    parser.add_argument("--select", type=int, default=1)   # 1: MOT17, 2: MOT20
+    parser.add_argument("--select", type=int, default=2)   # 1: MOT17, 2: MOT20
 
     save_dir = "/media/daton/Data/datasets/mot/extracted_frames"
     parser.add_argument("--save-dir", type=str, default=save_dir)
@@ -282,7 +282,7 @@ def parse_args():
     save_labels = True
     parser.add_argument("--save-labels", type=str, default=save_labels)
 
-    interval = 50
+    interval = 250
     parser.add_argument("--interval", type=int, default=interval)
 
     target_idx = [5]
@@ -296,7 +296,7 @@ def parse_args():
     #target_size = None
     parser.add_argument("--target-size", type=int, default=target_size)
     parser.add_argument("--num-workers", type=int, default=4)
-    parser.add_argument("--visibility-thr", type=float, default=0.1)
+    parser.add_argument("--visibility-thr", type=float, default=0.)
     parser.add_argument("--view", action="store_true", default=False)
     parser.add_argument("--view-label", action="store_true", default=False)
     parser.add_argument("--view-visibility", action="store_true", default=True)
