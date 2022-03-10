@@ -118,7 +118,7 @@ def main(args):
             if not hide_info:
                 info = f"{vid_name}: {i + 1} / {len(imgs)}"
                 font_scale = int(3 * img.shape[1] / 1280)
-                plot_label(img, info, font_size=font_scale, font_thickness=font_scale)
+                plot_info(img, info, font_size=font_scale, font_thickness=font_scale)
             if view:
                 cv2.imshow(vid_name, img)
                 cv2.waitKey(1)
@@ -182,10 +182,10 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     return im, ratio, (dw, dh)
 
 
-def plot_label(img, label, font_size=1, font_thickness=1):
-    label_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)[0]
+def plot_info(img, info, font_size=1, font_thickness=1):
+    label_size = cv2.getTextSize(info, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)[0]
     cv2.rectangle(img, (0, 0), (label_size[0] + 10, label_size[1] * 2), [0, 0, 0], -1)
-    cv2.putText(img, label, (5, int(label_size[1] * 1.5))
+    cv2.putText(img, info, (5, int(label_size[1] * 1.5))
                 , cv2.FONT_HERSHEY_PLAIN, font_size, (255, 255, 255), font_thickness, cv2.LINE_AA)
 
 
@@ -207,9 +207,9 @@ def parse_args():
     parser.add_argument("--view", action="store_true", default=True)
     parser.add_argument("--view-size", type=int, default=[1280, 720])
     parser.add_argument("--visibility-thr", type=float, default=0.0)
-    parser.add_argument("--hide_info", action="store_true", default=True)
+    parser.add_argument("--hide_info", action="store_true", default=False)
     parser.add_argument("--hide-ignored", action="store_true", default=False)
-    parser.add_argument("--hide-label", action="store_true", default=True)
+    parser.add_argument("--hide-label", action="store_true", default=False)
     parser.add_argument("--hide-visibility", action="store_true", default=False)
 
     args = parser.parse_args()
