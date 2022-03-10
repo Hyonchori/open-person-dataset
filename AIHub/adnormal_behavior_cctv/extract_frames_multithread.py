@@ -132,11 +132,17 @@ def extract_frames(input_item):
         cap.set(cv2.CAP_PROP_POS_FRAMES, alarm_start_frame)
 
     save_cnt = 0
-    for i in range(alarm_end_frame - alarm_start_frame):
+    target_length = alarm_end_frame - alarm_start_frame
+    too_short = target_length // interval < 1
+    if too_short:
+        target_frames = [target_length // 2]
+    else:
+        target_frames = [x for x in range(0, target_length - 1, interval)]
+    for i in range(target_length):
         ret, img = cap.read()
         if not ret:
             break
-        if i % interval != 0:
+        if i not in target_frames:
             continue
         else:
             save_cnt += 1
@@ -149,7 +155,7 @@ def extract_frames(input_item):
         if save_cnt >= max_frame_per_vid:
             break
     split_dir = vid_path.split("/")[-2]
-    print(f"Save {save_cnt} images from {split_dir}/{vid_name} ({alarm_end_frame - alarm_start_frame})")
+    print(f"Save {save_cnt} images from {split_dir}/{vid_name} ({target_length})")
     cap.release()
 
 
