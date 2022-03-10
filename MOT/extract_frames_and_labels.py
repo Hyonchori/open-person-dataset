@@ -53,7 +53,6 @@ def increment_path(path, exist_ok=False, sep='', mkdir=False):
     return path
 
 
-
 def main(args):
     root = args.root
     select = args.select

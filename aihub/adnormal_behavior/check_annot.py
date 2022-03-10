@@ -50,7 +50,7 @@ def view_annot(root, target_action=None, target_split=None, target_case=None, ta
                         view_one_vid(take_dir_path, scene, annot)
 
 
-def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size=3, font_thickness=3):
+def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size=2, font_thickness=2):
     print(f"\n--- Processing {vid_dir_path}/{vid_name}")
     vid_path = os.path.join(vid_dir_path, vid_name)
     cap = cv2.VideoCapture(vid_path)
@@ -83,17 +83,18 @@ def view_one_vid(vid_dir_path, vid_name, annot_name, txt_org=(10, 50), font_size
         if not ret:
             break
         img = cv2.resize(img, dsize=(WIDTH, HEIGHT))
-        txt_size, _ = cv2.getTextSize(vid_name, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)
-        cv2.rectangle(img, (txt_org[0], txt_org[1] + 10),
-                      (txt_org[0] + txt_size[0], txt_org[1] - txt_size[1] - 10), [0, 0, 0], -1)
-        cv2.putText(img, vid_name, txt_org, cv2.FONT_HERSHEY_PLAIN, font_size, [255, 255, 255], font_thickness,
-                    cv2.LINE_AA)
         ref_img = np.zeros_like(img)
         if pos_frame < alarm_frame:
             ref_img[..., 1:] = 225
         else:
             ref_img[..., -1] = 225
         img = cv2.addWeighted(img, 1, ref_img, 0.5, 0)
+
+        txt_size, _ = cv2.getTextSize(vid_name, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)
+        cv2.rectangle(img, (txt_org[0], txt_org[1] + 10),
+                      (txt_org[0] + txt_size[0], txt_org[1] - txt_size[1] - 10), [0, 0, 0], -1)
+        cv2.putText(img, vid_name, txt_org, cv2.FONT_HERSHEY_PLAIN, font_size, [255, 255, 255], font_thickness,
+                    cv2.LINE_AA)
         cv2.imshow('img', img)
         cv2.waitKey(1)
         if pos_frame >= end_frame:

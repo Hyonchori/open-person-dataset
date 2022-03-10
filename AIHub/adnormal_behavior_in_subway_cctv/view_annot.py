@@ -19,16 +19,19 @@ def main(args):
     view = args.view
     view_size = args.view_size
 
-    splits = [x for x in os.listdir(root) if os.path.isdir(os.path.join(root, x))]
+    splits = [x for x in os.listdir(root) if os.path.isdir(os.path.join(root, x)) and x in SPLITS.values()]
     if target_split is not None:
+        assert all(x in SPLITS for x in target_split), \
+            f"Some elements of '{target_split}' are not in {SPLITS}"
         assert all(SPLITS[x] in splits for x in target_split), \
             f"Some elements of '{[SPLITS[x] for x in target_split]}' are not in {splits}"
         splits = [SPLITS[x] for x in target_split]
-
     for split in splits:
         split_dir_path = os.path.join(root, split)
         actions = [x for x in os.listdir(split_dir_path) if os.path.isdir(os.path.join(split_dir_path, x))]
         if target_action is not None:
+            assert all(x in ACTIONS for x in target_action), \
+                f"Some elements of '{target_action}' are not in {ACTIONS}"
             assert all(ACTIONS[x] in actions for x in target_action), \
                 f"Some elements of '{[ACTIONS[x] for x in target_action]}' are not in {actions}"
             actions = [ACTIONS[x] for x in target_action]
@@ -124,12 +127,12 @@ def parse_args():
 
     # 1: Training, 2: Validation
     target_split = [1]
-    # split = None
+    target_split = None
     parser.add_argument("--target-split", type=str, default=target_split)
 
     # 1: "실신", 2: "환경전도", 3: "에스컬레이터 전도", 4: "계단 전도"
     target_action = [1, 2]
-    # target_action = None
+    target_action = None
     parser.add_argument("--target-action", type=str, default=target_action)
 
     # Different by action
@@ -143,7 +146,7 @@ def parse_args():
     parser.add_argument("--target-scene", type=str, default=target_scene)
 
     parser.add_argument("--view", action="store_true", default=True)
-    parser.add_argument("--view-size", action="store_true", default=[1280, 720])
+    parser.add_argument("--view-size", type=int, default=[1280, 720])
 
     args = parser.parse_args()
     return args

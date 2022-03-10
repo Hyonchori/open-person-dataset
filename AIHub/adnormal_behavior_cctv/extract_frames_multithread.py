@@ -1,12 +1,16 @@
-# View annotations of '이상행동 CCTV 영상' dataset
+# Extract frames from alarm start frame to alarm end frame by interval
+# v1: Total save count: 1339, Interval: 200, Elapsed time: 980.39s
 import argparse
 import os
+import re
+import glob
+import time
+import multiprocessing as mp
+from pathlib import Path
 from datetime import timedelta
 
 import cv2
 import xmltodict
-import numpy as np
-
 
 ACTIONS = {5: "05.실신(swoon)", 7: "07.침입(trespass)"}
 SPLITS = {1: "inside_croki", 2: "insidedoor", 3: "outsidedoor"}
@@ -14,15 +18,25 @@ SPLITS = {1: "inside_croki", 2: "insidedoor", 3: "outsidedoor"}
 
 def main(args):
     root = args.root
-    only_view_event = args.only_view_event
-    start_margin = args.start_margin
-    end_margin = args.end_margin
-    view_size = args.view_size
+    save_dir = args.save_dir
+    run_name = args.run_name
+    interval = args.interval
+    num_workers = args.num_workers
+    max_frame_per_vid = args.max_frame_per_vid
+    target_size = args.target_size
+    save = args.save
     target_action = args.target_action
     target_split = args.target_split
     target_split_num = args.target_split_num
     target_scene = args.target_scene
     target_cam_idx = args.target_cam_idx
+
+    save_dir = increment_path(Path(save_dir) / run_name, exist_ok=False)
+    if save:
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+    ts = time.time()
+    total_paths = []
 
     actions = [x for x in os.listdir(root) if os.path.isdir(os.path.join(root, x)) and x in ACTIONS.values()]
     if target_action is not None:
@@ -76,56 +90,82 @@ def main(args):
                         annot_path = vid_path.replace(".mp4", ".xml")
                         if not os.path.isfile(annot_path):
                             continue
-                        visualize_one_vid(vid_path, annot_path, only_view_event, start_margin, end_margin, view_size)
+                        else:
+                            total_paths.append(vid_path)
+
+    pool = mp.Pool(num_workers)
+    pool.map(
+        extract_frames,
+        zip(total_paths,
+            len(total_paths) * [save_dir],
+            len(total_paths) * [interval],
+            len(total_paths) * [max_frame_per_vid],
+            len(total_paths) * [target_size],
+            len(total_paths) * [save])
+    )
+    te = time.time()
+    total_save_cnt = len([x for x in os.listdir(save_dir) if x.endswith(".png")])
+    print(f"\n--- Total save count: {total_save_cnt}, Interval: {interval}, Elapsed time: {te - ts:.2f}s")
 
 
-def visualize_one_vid(vid_path, annot_path, only_view_event, start_margin, end_margin, view_size, fs=2, ft=2):
+def extract_frames(input_item):
+    vid_path, save_dir, interval, max_frame_per_vid, target_size, save = input_item
+    annot_path = vid_path.replace(".mp4", ".xml")
     cap = cv2.VideoCapture(vid_path)
     with open(annot_path) as f:
         annot = xmltodict.parse(f.read())["annotation"]
         vid_name = annot["filename"]
-        header = annot["header"]
-        fps = float(header["fps"])
-        width = int(annot["size"]["width"])
-        height = int(annot["size"]["height"])
+        fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         total_seconds = total_frames / fps
         total_time_delta = timedelta(seconds=int(total_seconds))
-        print(f"\n--- Processing {vid_name}")
-        print(f"\twidth: {width}, height: {height}, fps: {fps}, total_frames: {total_frames}, duration: {total_time_delta}")
 
-        if only_view_event:
-            event = annot["event"]
-            start_time = time2hms(event["starttime"])
-            start_time_delta = timedelta(hours=start_time[0], minutes=start_time[1], seconds=start_time[2])
-            duration = time2hms(event["duration"])
-            duration_delta = timedelta(hours=duration[0], minutes=duration[1], seconds=int(duration[2]))
-            start_time_rate = start_time_delta / total_time_delta
-            end_time_rate = (start_time_delta + duration_delta) / total_time_delta
-            start_frame = max(0, int(total_frames * start_time_rate - fps * start_margin))
-            alarm_start_frame = int(total_frames * start_time_rate)
-            alarm_end_frame = int(total_frames * end_time_rate)
-            end_frame = min(total_frames, int(total_frames * end_time_rate + fps * end_margin))
-            cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-            print(f"\talarm start: {alarm_start_frame}, alarm duration: {duration_delta}")
+        event = annot["event"]
+        start_time = time2hms(event["starttime"])
+        start_time_delta = timedelta(hours=start_time[0], minutes=start_time[1], seconds=start_time[2])
+        duration = time2hms(event["duration"])
+        duration_delta = timedelta(hours=duration[0], minutes=duration[1], seconds=int(duration[2]))
+        start_time_rate = start_time_delta / total_time_delta
+        end_time_rate = (start_time_delta + duration_delta) / total_time_delta
+        alarm_start_frame = int(total_frames * start_time_rate)
+        alarm_end_frame = int(total_frames * end_time_rate)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, alarm_start_frame)
 
-        while True:
-            pos_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-            ret, img = cap.read()
-            if not ret:
-                break
-            ref_img = np.zeros_like(img)
-            if alarm_start_frame <= pos_frame < alarm_end_frame:
-                ref_img[..., -1] = 225
-            img = cv2.addWeighted(img, 1, ref_img, 0.3, 0)
-            if view_size is not None:
-                img = cv2.resize(img, dsize=view_size)
-            info = f"{vid_name}: {pos_frame} / {total_frames}"
-            plot_info(img, info)
-            cv2.imshow("img", img)
-            cv2.waitKey(1)
-            if pos_frame >= end_frame:
-                break
+    save_cnt = 0
+    for i in range(alarm_end_frame - alarm_start_frame):
+        ret, img = cap.read()
+        if not ret:
+            break
+        if i % interval != 0:
+            continue
+        else:
+            save_cnt += 1
+        if target_size is not None:
+            img = cv2.resize(img, dsize=target_size)
+        if save:
+            save_name = f"{vid_name.replace('.mp4', '')}_{i}.png"
+            save_path = os.path.join(save_dir, save_name)
+            cv2.imwrite(save_path, img)
+        if save_cnt >= max_frame_per_vid:
+            break
+    split_dir = vid_path.split("/")[-2]
+    print(f"Save {save_cnt} images from {split_dir}/{vid_name} ({alarm_end_frame - alarm_start_frame})")
+    cap.release()
+
+
+def increment_path(path, exist_ok=False, sep='', mkdir=False):
+    # Increment file or directory path, i.e. runs/exp --> runs/exp{sep}2, runs/exp{sep}3, ... etc.
+    path = Path(path)  # os-agnostic
+    if path.exists() and not exist_ok:
+        path, suffix = (path.with_suffix(''), path.suffix) if path.is_file() else (path, '')
+        dirs = glob.glob(f"{path}{sep}*")  # similar paths
+        matches = [re.search(rf"%s{sep}(\d+)" % path.stem, d) for d in dirs]
+        i = [int(m.groups()[0]) for m in matches if m]  # indices
+        n = max(i) + 1 if i else 2  # increment number
+        path = Path(f"{path}{sep}{n}{suffix}")  # increment path
+    if mkdir:
+        path.mkdir(parents=True, exist_ok=True)  # make directory
+    return path
 
 
 def time2hms(t):
@@ -137,23 +177,32 @@ def time2hms(t):
         return 0, m, s
 
 
-def plot_info(img, info, font_size=2, font_thickness=2):
-    label_size = cv2.getTextSize(info, cv2.FONT_HERSHEY_PLAIN, font_size, font_thickness)[0]
-    cv2.rectangle(img, (0, 0), (label_size[0] + 10, label_size[1] * 2), [0, 0, 0], -1)
-    cv2.putText(img, info, (5, int(label_size[1] * 1.5))
-                , cv2.FONT_HERSHEY_PLAIN, font_size, (255, 255, 255), font_thickness, cv2.LINE_AA)
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
     root = "/media/daton/Data/datasets/이상행동 CCTV 영상"
     parser.add_argument("--root", type=str, default=root)
 
+    save_dir = "/media/daton/Data/datasets/이상행동 CCTV 영상/extracted_frames"
+    parser.add_argument("--save-dir", type=str, default=save_dir)
+
+    run_name = "exp"
+    parser.add_argument("--run-name", type=str, default=run_name)
+
+    num_workers = 4
+    parser.add_argument("--num-workers", type=int, default=num_workers)
+
+    interval = 100
+    parser.add_argument("--interval", type=int, default=interval)
+
+    max_frame_per_vid = 3
+    parser.add_argument("--max_frame_per_vid", type=int, default=max_frame_per_vid)
+
     parser.add_argument("--only-view-event", action="store_true", default=True)
     parser.add_argument("--start-margin", type=int, default=5)
     parser.add_argument("--end-margin", type=int, default=5)
-    parser.add_argument("--view-size", type=int, default=[1280, 720])
+    parser.add_argument("--target-size", type=int, default=[1280, 720])
+    parser.add_argument("--save", action="store_true", default=True)
 
     # 5: swoon, 7: trespass
     target_action = [5, 7]
@@ -162,12 +211,12 @@ def parse_args():
 
     # 1: inside_croki, 2: insidedoor, 3: outsidedoor
     target_split = [3]
-    #target_split = None
+    # target_split = None
     parser.add_argument("--target-split", type=int, default=target_split)
 
     # Different by action, split
     target_split_num = [1, 2, 3, 4, 5]
-    #target_split_num = None
+    target_split_num = None
     parser.add_argument("--target-split-num", type=int, default=target_split_num)
 
     # Different by action, split
