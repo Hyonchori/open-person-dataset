@@ -18,7 +18,6 @@ def main(args):
     view_size = args.view_size
 
     annot2d_dir_path = os.path.join(root, "annotation", "Annotation_2D_tar", "2D")
-    annots = [x for x in os.listdir(annot2d_dir_path) if os.path.isdir(os.path.join(annot2d_dir_path, x))]
 
     img_dir_path = os.path.join(root, "이미지")
     actions = [x for x in os.listdir(img_dir_path)
@@ -119,18 +118,22 @@ def parse_args():
     root = "/media/daton/Data/datasets/사람동작 영상"
     parser.add_argument("--root", type=str, default=root)
 
+    # 6: fall-down
     target_action = [6]
     # target_action = None
     parser.add_argument("--target-action", type=str, default=target_action)
 
+    # Different by action
     target_action_num = [3]
     # target_action_num = None
     parser.add_argument("--target-action-num", type=str, default=target_action_num)
 
+    # Different by action
     target_scene = [3]
     # target_scene = None
     parser.add_argument("--target-scene", type=str, default=target_scene)
 
+    # Different by scene
     target_cam = [3]
     target_cam = None
     parser.add_argument("--target-cam", type=str, default=target_cam)

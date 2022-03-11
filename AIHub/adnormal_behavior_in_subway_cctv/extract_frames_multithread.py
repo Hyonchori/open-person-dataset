@@ -1,4 +1,4 @@
-# Extract frames by interval
+# Extract frames by interval or frame rate
 # v1: total 1934 images, with frame rate: [0.3] (26s)
 import argparse
 import os
@@ -106,6 +106,7 @@ def extract_frames(input_item):
     else:
         target_frames = []
     save_cnt = 0
+    max_frame_per_vid = len(target_frames)
     for i, img_name in enumerate(imgs):
         if i not in target_frames:
             continue
@@ -119,6 +120,8 @@ def extract_frames(input_item):
             save_name = f"{action_dir}_{num_dir}_{i + 1}.png"
             save_path = os.path.join(save_dir_path, save_name)
             cv2.imwrite(save_path, img)
+        if save_cnt >= max_frame_per_vid:
+            break
     print(f"Save {save_cnt} images from {action_dir}/{num_dir} ({len(imgs)})")
 
 
