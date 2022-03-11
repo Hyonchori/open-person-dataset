@@ -1,5 +1,6 @@
 # Extract frames from alarm start frame to alarm end frame by interval
 # v1: Total save count: 1339, Interval: 200, Elapsed time: 980.39s
+# v2: Total save count: 1996, Interval: 100, Elapsed time: 956.64s
 import argparse
 import os
 import re
