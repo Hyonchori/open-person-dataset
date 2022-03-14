@@ -152,7 +152,6 @@ def parse_args():
     vid_list = ["C104301_001"]  # 1
     vid_list = ["C114101_001"]  # 1
 
-
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
 
     save_name = "KISA_intrusion_19"

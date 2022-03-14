@@ -57,6 +57,8 @@ def visualize_one_vid(img_dir_path, imgs, vid_name, view_size):
             cls, cxn, cyn, wn, hn = list(map(float, annot.split()))
             color = [0, 0, 255]
             xyxy = cpwhn2xyxy(cxn, cyn, wn, hn, w, h)
+            if is_resized:
+                xyxy = resize_xyxy(xyxy, ratio, dw, dh)
             img = cv2.rectangle(img, xyxy[:2], xyxy[2:], color, 2)
             plot_label(img, xyxy, CLASSES[int(cls + 1)], color)
 
@@ -71,6 +73,14 @@ def cpwhn2xyxy(cxn, cyn, wn, hn, w, h):
             int((cyn - hn / 2) * h),
             int((cxn + wn / 2) * w),
             int((cyn + hn / 2) * h),]
+    return xyxy
+
+
+def resize_xyxy(xyxy, ratio, dw, dh):
+    xyxy = [int(xyxy[0] * ratio[0] + dw),
+            int(xyxy[1] * ratio[1] + dh),
+            int(xyxy[2] * ratio[0] + dw),
+            int(xyxy[3] * ratio[1] + dh)]
     return xyxy
 
 
@@ -135,7 +145,7 @@ def parse_args():
     parser.add_argument("--target-split", type=int, default=target_split)
 
     view_size = [1280, 720]
-    view_size = None
+    # view_size = None
     parser.add_argument("--view-size", type=int, default=view_size)
 
     args = parser.parse_args()
