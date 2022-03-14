@@ -109,8 +109,8 @@ def get_gt_from_annot(annot_path):
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    target_dir = "/home/daton/Desktop/gs/loitering"
     target_dir = "/home/daton/Desktop/gs/intrusion"
-    #target_dir = "/home/daton/Desktop/gs/intrusion"
     parser.add_argument("--target-dir", type=str, default=target_dir)
 
 
@@ -147,13 +147,15 @@ def parse_args():
     vid_list = ["C019102_001"]  # 1
     vid_list = ["C021102_001"]  # 1
     vid_list = ["C090201_003"]  # 1
-    vid_list = ["C098201_004"]  # 1   ,remove this video (can't detect person well)
+    #vid_list = ["C098201_004"]  # 1   ,remove this video (can't detect person well)
+    vid_list = ["C110101_004"]  # 1   ,newly add this video
     vid_list = ["C104301_001"]  # 1
     vid_list = ["C114101_001"]  # 1
-    vid_list = ["C110101_004"]  # 1   ,newly add this video
+
+
     parser.add_argument("--vid-list", nargs="+", type=str, default=vid_list)
 
-    save_name = "KISA_intrusion_17"
+    save_name = "KISA_intrusion_19"
     parser.add_argument("--save-name", type=str, default=save_name)
 
     label_dir_list = ["/media/daton/SAMSUNG/3. 연구개발분야/3. 바이오인식(1500개)/1. 얼굴(1410개)",
@@ -163,7 +165,7 @@ def parse_args():
                       "/media/daton/SAMSUNG/4. 민간분야(2021 특수환경)/distribution"]
     parser.add_argument("--label-dir-list", nargs="+", type=str, default=label_dir_list)
 
-    save_dir = "/home/daton/Desktop/gs"
+    save_dir = "/home/daton/Desktop/gs/intrusion_gs_v3"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
     vid_interval = 3  # n second
