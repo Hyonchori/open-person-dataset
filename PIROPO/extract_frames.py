@@ -64,6 +64,7 @@ def extract_selected_frames(img_dir_path, vid_name, target_size, crop_rate, save
         cv2.imshow("img", imv)
         tmp_input = cv2.waitKey(0) & 0xFF
         if tmp_input == ord('s'):
+            img_name = " ".join(img_name.split(".")[:-1]) + ".png"
             save_path = os.path.join(save_dir, img_name)
             if save:
                 cv2.imwrite(save_path, img)

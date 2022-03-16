@@ -93,6 +93,14 @@ def main(args):
 def extract_frames(input_item):
     img_dir_path, save_dir_path, resize, interval, frame_rate, save = input_item
     action_dir = img_dir_path.split('/')[-2]
+    if "에스컬레이터" in action_dir:
+        action_dir = "escalator"
+    elif "계단" in action_dir:
+        action_dir = "stair"
+    elif "환경" in action_dir:
+        action_dir = "env"
+    elif "실신" in action_dir:
+        action_dir = "swoon"
     num_dir = img_dir_path.split('/')[-1]
     imgs = sorted(os.listdir(img_dir_path))
     if interval is not None and frame_rate is None:

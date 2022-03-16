@@ -1,6 +1,7 @@
 # Extract frames by interval from input video
 import argparse
 import os
+import re
 import time
 import multiprocessing as mp
 from pathlib import Path
@@ -28,7 +29,9 @@ def extract_frames(vid_item, verbose=False):
         if not ret:
             break
         if save and tmp_frame % interval == 0:
-            save_path = os.path.join(save_dir, Path(vid_name).name.replace(".mp4", "") + f"_{tmp_frame}.png")
+            save_name = " ".join(Path(vid_name).name.split(".")[:-1]) + f"_{tmp_frame}.png"
+            save_name = clean_str(save_name)
+            save_path = os.path.join(save_dir, save_name)
             if resize:
                 img = letterbox(img, target_size[::-1], auto=False)[0]
             cv2.imwrite(save_path, img)
@@ -67,6 +70,11 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
     im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
     return im, ratio, (dw, dh)
+
+
+def clean_str(s):
+    # Cleans a string by replacing special characters with underscore _
+    return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
 
 
 def main(args):

@@ -31,7 +31,9 @@ def main(args):
         imgs_info = annot["images"]
         print(f"\tcopying images info")
         time.sleep(0.1)
+        img_id_dict = {}
         for tmp_img_info in tqdm(imgs_info):
+            img_id_dict[tmp_img_info["id"]] = img_cnt
             img_info = {"file_name": tmp_img_info["file_name"],
                         "id": img_cnt,
                         "height": tmp_img_info["height"],
@@ -44,7 +46,7 @@ def main(args):
         for tmp_ann_info in tqdm(annots_info):
             ann_info = {"id": ann_cnt,
                         "category_id": 1,
-                        "image_id": img_cnt,
+                        "image_id": img_id_dict[tmp_ann_info["image_id"]],
                         "bbox": tmp_ann_info["bbox"],
                         "area": tmp_ann_info["area"],
                         "iscrowd": tmp_ann_info["iscrowd"]}
@@ -67,16 +69,16 @@ def parse_args():
         "/media/daton/Data/datasets/general_person_dataset/coco_annotations/MOT20.json",
         "/media/daton/Data/datasets/general_person_dataset/coco_annotations/custom_train.json"
     ]
-    coco_path_list = [
+    '''coco_path_list = [
         "/media/daton/Data/datasets/general_person_dataset/coco_annotations/crowdhuman_val.json",
         "/media/daton/Data/datasets/general_person_dataset/coco_annotations/custom_val.json"
-    ]
+    ]'''
     parser.add_argument("--coco-path-list", nargs="+", type=str, default=coco_path_list)
 
     save_dir = "/media/daton/Data/datasets/general_person_dataset/coco_annotations"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    out_name = "val.json"
+    out_name = "train.json"
     parser.add_argument("--out-name", type=str, default=out_name)
 
     parser.add_argument("--save", action="store_true", default=True)
