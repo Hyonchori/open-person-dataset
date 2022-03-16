@@ -58,12 +58,12 @@ def main(args):
 
         assert all(x in CLASSES for x in target_class), f"Some elements of {target_class} are wrong!"
         annot_path = os.path.join(root, f"annotation_{select}.odgt")
-        visualize_images(img_paths_dict, annot_path, img_save_dir, gt_save_dir,
-                         target_class, target_size, crop_bbox, skip_ignored, save)
+        extract_frames_and_labels(img_paths_dict, annot_path, img_save_dir, gt_save_dir,
+                                  target_class, target_size, crop_bbox, skip_ignored, save)
 
 
-def visualize_images(img_paths_dict, annot_path, img_save_dir, gt_save_dir,
-                     target_class, target_size, crop_bbox, skip_ignored, save):
+def extract_frames_and_labels(img_paths_dict, annot_path, img_save_dir, gt_save_dir,
+                              target_class, target_size, crop_bbox, skip_ignored, save):
     with open(annot_path) as f:
         data = f.readlines()
         for d in tqdm(data):

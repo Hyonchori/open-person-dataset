@@ -147,7 +147,9 @@ def main(args):
                 conf = track_info[4]
                 cls = track_info[5]
                 visibility = track_info[6]
-                if (visibility < visibility_thr) or (skip_ignored and conf == 0) or (target_class is not None and cls not in target_class):
+                if (visibility < visibility_thr) or \
+                        (skip_ignored and conf == 0) or \
+                        (target_class is not None and cls not in target_class):
                     continue
                 else:
                     obj_cnt += 1
@@ -158,8 +160,11 @@ def main(args):
                         xyxy = xywh2xyxyc(xywh, w, h)
                 else:
                     xyxy = xywh2xyxy(xywh)
-                cpwhn = xyxy2cpwhn(xyxy, w, h)
-                txt += f"{cls} {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}\n"
+                if target_size is not None:
+                    cpwhn = xyxy2cpwhn(xyxy, target_size[0], target_size[1])
+                else:
+                    cpwhn = xyxy2cpwhn(xyxy, w, h)
+                txt += f"0 {cpwhn[0]} {cpwhn[1]} {cpwhn[2]} {cpwhn[3]}\n"
                 color = colors(cls, True)
                 cv2.rectangle(imv, (int(cpwhn[0] * w - cpwhn[2] * w / 2), int(cpwhn[1] * h - cpwhn[3] * h / 2)),
                               (int(cpwhn[0] * w + cpwhn[2] * w / 2), int(cpwhn[1] * h + cpwhn[3] * h / 2)), color, 2)
@@ -275,7 +280,7 @@ def parse_args():
     save_dir = "/media/daton/Data/datasets/mot/extracted_frames"
     parser.add_argument("--save-dir", type=str, default=save_dir)
 
-    run_name = "exp"
+    run_name = "MOT20"
     parser.add_argument("--run-name", type=str, default=run_name)
 
     save_labels = True

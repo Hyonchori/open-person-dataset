@@ -43,9 +43,10 @@ def extract_selected_frames(img_dir_path, vid_name, target_size, crop_rate, save
     print(f"\n--- Processing {vid_name}")
     imgs = [x for x in sorted(os.listdir(img_dir_path)) if x.endswith(".jpg")]
     cnt = 0
-    #for i, img_name in enumerate(imgs):
     tmp_idx = 0
     while True:
+        if tmp_idx >= len(imgs):
+            break
         img_name = imgs[tmp_idx]
         img_path = os.path.join(img_dir_path, img_name)
         img = cv2.imread(img_path)
